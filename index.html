@@ -8,25 +8,34 @@
   <title>Illusory conjunctions · A perception experiment</title>
   <!-- SETUP: Paste your deployed Google Apps Script /exec URL into
        GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
-       The existing Code.gs collector stays in your Google Sheet's Apps Script. -->
+       For version 1.2.0, also replace Code.gs, run setup, and update the existing
+       Apps Script web-app deployment before collecting the new student fields. -->
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
-  GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycby-efw2xpqzlIjn4IHY56NFx6q-yLncoxAU0a0tCaWkGsTHCAEVgoE7mUavYrkv1Xz7Vg/exec", // Paste the deployed Apps Script web-app URL ending in /exec.
+  GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
-  TASK_VERSION: "1.0.0",
-  MAIN_BLOCKS: 3,         // 1, 2, or 3 blocks of 12; 3 gives the fully balanced 36-trial demo.
+  TASK_VERSION: "1.2.0",
+  MAIN_BLOCKS: 1,
+  MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice or breaks.
   OFFER_FULLSCREEN: true,
   STORAGE_PREFIX: "illusory-conjunction-v1",
   MIN_WIDTH: 900,
   MIN_HEIGHT: 650,
-  FIXATION_MS: 750,
-  STREAM_MS: 5000,
-  DIGIT_COUNT: 30,
-  PERIPHERAL_ONSET_DIGIT: 20, // One-based; the original procedure begins with the 20th digit.
+  FIXATION_MS: 250,
+  STREAM_MS: 2000,
+  DIGIT_COUNT: 12,
+  PERIPHERAL_ONSET_DIGIT: 4,  // One-based: 500 ms into the shortened stream.
   PERIPHERAL_DIGITS: 9,       // Nine digit intervals = 1500 ms.
   RESPONSE_WINDOW_MS: 500,
   GRACE_MS: 500,             // Preserves the response window for a zero in the final position.
+  REPORT_TIMEOUT_MS: 1500,   // One combined color-and-letter choice. Unanswered trials are flagged.
+  DISTANCE_START: 0.27,      // Target horizontal offset as a fraction of canvas width.
+  DISTANCE_MIN: 0.08,
+  DISTANCE_MAX: 0.40,
+  DISTANCE_STEP: 0.02,       // Equal changes after each 10-trial accuracy check.
+  ADJUST_EVERY: 10,
+  ADJUST_PAUSE_MS: 1000,     // Automatic feedback pause after trials 10, 20, 30, 40, and 50.
   FRAME_WARNING_MS: 50,
   FRAME_ABORT_MS: 150,
   COLORS: Object.freeze({red: "#ff5252", green: "#35d07f", blue: "#5d9dff"})
@@ -307,6 +316,42 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* A single joint report keeps the short demonstration moving. */
+.report-screen { padding-top: 12px; padding-bottom: 12px; }
+.report-topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.report-topline .eyebrow { margin: 0; }
+.report-timer { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.report-screen .report-card { width: min(610px, 100%); }
+.report-screen .report-card h1 { font-size: 26px; }
+.report-screen .focus-copy { margin: 10px auto 13px; font-size: 13px; }
+.report-time-track { height: 4px; background: #e1e6df; border-radius: 4px; margin: 0 0 14px; overflow: hidden; }
+#report-time-fill { width: 100%; height: 100%; background: var(--teal); }
+.conjunction-options { gap: 10px; }
+.report-button.conjunction-choice { min-height: 92px; padding: 9px 12px; gap: 3px; background: #121719; border-color: #3a4546; }
+.report-button.conjunction-choice:hover:not(:disabled), .report-button.conjunction-choice:focus-visible { background: #253034; border-color: #97aaa4; }
+.conjunction-choice .letter-glyph { font-size: 32px; }
+.conjunction-choice .choice-label { font-size: 10px; color: #dce4e0; }
+.conjunction-choice kbd { color: #e8eeea; border-color: #657371; background: transparent; min-height: 20px; min-width: 24px; line-height: 1.1; font-size: 11px; }
+.choice-red .letter-glyph { color: #ff5252; }
+.choice-green .letter-glyph { color: #35d07f; }
+.choice-blue .letter-glyph { color: #5d9dff; }
+.results-detail { margin: 13px 0; font-size: 14px; color: #426054; }
+@media (min-width: 900px) and (max-height: 740px) {
+  .report-screen { min-height: 0; }
+  .report-button.conjunction-choice { min-height: 82px; }
+  .report-screen .report-card h1 { font-size: 24px; }
+}
+
+.name-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.result-metrics { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; margin: 20px 0 25px; }
+.result-metrics > div { padding: 20px 23px; background: #edf2e9; border: 1px solid #d6dfd1; border-radius: 10px; }
+.result-metrics span { display: block; color: #426054; font-size: 12px; }
+.result-metrics strong { display: block; margin: 6px 0; font-size: 32px; line-height: 1.2; font-weight: 650; }
+.result-metrics small { display: block; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.feedback-distance { margin-top: 10px; font-size: 16px; color: var(--teal); }
+.feedback-countdown { margin-top: 15px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .result-metrics, .name-fields { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -321,7 +366,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       <div class="session-progress">
         <div class="progress-labels">
           <span id="phase-label">Welcome</span>
-          <span id="trial-progress">6 practice · 36 main trials</span>
+          <span id="trial-progress">60 total trials</span>
         </div>
         <div class="progress-track" aria-hidden="true"><div id="progress-fill"></div></div>
       </div>
@@ -341,28 +386,32 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
           <p class="eyebrow">Attention &amp; feature binding</p>
           <h1 id="welcome-title">Illusory<br>conjunctions</h1>
           <p class="intro-copy">Watch the center. Catch the zeros. Then tell us what you saw at the edge.</p>
-          <p class="intro-description">This short experiment explores how we combine a letter and its color when our attention is occupied.</p>
+          <p class="intro-description">This experiment explores how we combine a letter and its color when our attention is occupied.</p>
           <dl class="session-facts">
-            <div><dt>Duration</dt><dd id="session-duration">5–7 min</dd></div>
-            <div><dt>Practice</dt><dd id="practice-count">6 trials</dd></div>
-            <div><dt>Main task</dt><dd id="main-block-count">3 short blocks</dd></div>
+            <div><dt>Task duration</dt><dd id="session-duration">About 4:20 max</dd></div>
+            <div><dt>Trials</dt><dd id="practice-count">60 total trials</dd></div>
+            <div><dt>Distance adjusts</dt><dd id="main-block-count">Every 10 trials</dd></div>
           </dl>
           <p class="equipment-note"><span aria-hidden="true">⌨</span> Laptop or desktop · Physical keyboard</p>
         </div>
 
         <div class="entry-card">
-          <p class="eyebrow">Your session</p>
+          <p class="eyebrow">Student details</p>
           <h2>Before you begin</h2>
-          <p class="muted">Find a comfortable position and keep the screen at a steady viewing distance.</p>
-          <div class="field">
-            <label for="participant-code">Participant code</label>
-            <input id="participant-code" name="participant-code" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="participant-code-hint" placeholder="e.g., P014">
-            <p id="participant-code-hint" class="field-hint">Use your assigned code, or leave blank for an automatic code. Do not enter your name.</p>
+          <p class="muted">Enter all four details so your instructor can identify your results. Keep the screen at a steady viewing distance.</p>
+          <div class="name-fields">
+            <div class="field"><label for="first-name">First name</label><input id="first-name" name="first-name" type="text" maxlength="80" autocomplete="given-name" required aria-required="true" spellcheck="false"></div>
+            <div class="field"><label for="last-name">Last name</label><input id="last-name" name="last-name" type="text" maxlength="80" autocomplete="family-name" required aria-required="true" spellcheck="false"></div>
           </div>
           <div class="field">
-            <label for="class-code">Class code</label>
-            <input id="class-code" name="class-code" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="class-code-hint" placeholder="Code from your instructor">
-            <p id="class-code-hint" class="field-hint">Use your instructor’s class code. For an individual preview, you may leave this blank.</p>
+            <label for="student-id">Student ID</label>
+            <input id="student-id" name="student-id" type="text" inputmode="numeric" maxlength="30" autocomplete="off" required aria-required="true" aria-describedby="student-id-hint" spellcheck="false">
+            <p id="student-id-hint" class="field-hint">Digits only. Include any leading zeros.</p>
+          </div>
+          <div class="field">
+            <label for="section-id">Section ID</label>
+            <input id="section-id" name="section-id" type="text" maxlength="40" autocomplete="off" required aria-required="true" aria-describedby="section-id-hint" spellcheck="false">
+            <p id="section-id-hint" class="field-hint">Use the section ID provided by your instructor.</p>
           </div>
           <button id="start-button" type="button" class="button button-primary button-full">Read the instructions <span aria-hidden="true">→</span></button>
           <div id="setup-notice" class="notice notice-quiet setup-notice" role="status" hidden>Local preview: you can download your results from this device. Class collection is not connected.</div>
@@ -398,8 +447,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <article class="instruction-card">
           <span class="step-number" aria-hidden="true">02</span>
           <h2>Report the peripheral target</h2>
-          <p>After the digits finish, report the target’s <strong>color first</strong>, then its <strong>letter</strong>. The target is always <strong>T, X, or L</strong>; the other characters are O.</p>
-          <p class="instruction-emphasis">If you are unsure, give your best answer.</p>
+          <p>After the digits finish, choose the <strong>colored letter</strong> you saw. The target is always <strong>T, X, or L</strong>; the other characters are O.</p>
+          <p class="instruction-emphasis">You have 1.5 seconds: click one colored letter or press its number. If unsure, give your best answer.</p>
         </article>
       </div>
 
@@ -409,25 +458,26 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
           <span class="example-string" aria-hidden="true"><span class="example-white">O</span><span class="example-red">T</span><span class="example-green">O</span><span class="example-white">O</span></span>
           <span class="example-caption" aria-hidden="true">Example display</span>
         </div>
-        <figcaption>Here, press <kbd>Space</kbd> for the central 0. After the display, report <strong>red</strong>, then <strong>T</strong>.</figcaption>
+        <figcaption>Here, press <kbd>Space</kbd> for the central 0. After the display, choose <strong>red T</strong> (key <kbd>1</kbd>).</figcaption>
       </figure>
 
       <div class="key-guide" aria-label="Response keys">
         <div><span class="key-guide-label">During the display</span><span><kbd>Space</kbd> for 0</span></div>
-        <div><span class="key-guide-label">Color report</span><span><kbd>1</kbd> Red <span class="key-gap"></span><kbd>2</kbd> Green <span class="key-gap"></span><kbd>3</kbd> Blue</span></div>
-        <div><span class="key-guide-label">Letter report</span><span><kbd>T</kbd> <kbd>X</kbd> <kbd>L</kbd></span></div>
+        <div><span class="key-guide-label">Red letters</span><span><kbd>1</kbd> T <kbd>2</kbd> X <kbd>3</kbd> L</span></div>
+        <div><span class="key-guide-label">Green letters</span><span><kbd>4</kbd> T <kbd>5</kbd> X <kbd>6</kbd> L</span></div>
+        <div><span class="key-guide-label">Blue letters</span><span><kbd>7</kbd> T <kbd>8</kbd> X <kbd>9</kbd> L</span></div>
       </div>
-      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">Begin with 6 practice trials and feedback, followed by 36 main trials in 3 blocks.</p><button id="instruction-start-button" type="button" class="button button-primary">Start practice <span aria-hidden="true">→</span></button></div>
+      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">60 trials in sets of 10. Each report has a 1.5-second limit. Distance adjusts between sets, with a one-second feedback pause. There are no extra practice trials.</p><button id="instruction-start-button" type="button" class="button button-primary">I’m ready <span aria-hidden="true">→</span></button></div>
     </section>
 
     <section id="ready-screen" class="screen centered-screen" aria-labelledby="ready-title" tabindex="-1" hidden>
       <div class="focus-card">
         <p class="eyebrow">Ready when you are</p>
         <div class="focus-symbol" aria-hidden="true">+</div>
-        <h1 id="ready-title">Let’s practice</h1>
-        <p id="ready-copy" class="focus-copy">Watch the center and press Space each time 0 appears. Then report the target’s color and letter.</p>
-        <button id="begin-trial-button" type="button" class="button button-primary">Begin trial <span aria-hidden="true">→</span></button>
-        <p class="field-hint">Place your thumb on the space bar.</p>
+        <h1 id="ready-title">Ready for 60 trials?</h1>
+        <p id="ready-copy" class="focus-copy">Watch the center and press Space each time 0 appears. Then choose the colored target letter within 1.5 seconds.</p>
+        <button id="begin-trial-button" type="button" class="button button-primary">Start demonstration <span aria-hidden="true">→</span></button>
+        <p class="field-hint">Place your thumb on Space. The trials run continuously for about 4 minutes 20 seconds at most, excluding interruptions.</p>
       </div>
     </section>
 
@@ -437,42 +487,34 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       <p id="task-note" class="task-note">Keep looking at the center. Wait for the report screen before answering about the letters.</p>
     </section>
 
-    <section id="report-screen" class="screen centered-screen" aria-labelledby="report-prompt" tabindex="-1" hidden>
+    <section id="report-screen" class="screen centered-screen report-screen" aria-labelledby="report-prompt" tabindex="-1" hidden>
       <div class="report-card">
-        <p id="report-progress" class="eyebrow">Report 1 of 2 · Color</p>
-        <h1 id="report-prompt" tabindex="-1" aria-live="polite" aria-atomic="true">What color was the target?</h1>
-        <p id="report-hint" class="focus-copy">Report the color of the T, X, or L.</p>
-        <div id="color-options" class="report-options" role="group" aria-label="Choose the target color">
-          <button type="button" class="report-button color-choice" data-color="red"><span class="color-swatch swatch-red" aria-hidden="true"></span><span class="choice-label">Red</span><kbd>1</kbd></button>
-          <button type="button" class="report-button color-choice" data-color="green"><span class="color-swatch swatch-green" aria-hidden="true"></span><span class="choice-label">Green</span><kbd>2</kbd></button>
-          <button type="button" class="report-button color-choice" data-color="blue"><span class="color-swatch swatch-blue" aria-hidden="true"></span><span class="choice-label">Blue</span><kbd>3</kbd></button>
-        </div>
-        <div id="letter-options" class="report-options" role="group" aria-label="Choose the target letter" hidden>
-          <button type="button" class="report-button letter-choice" data-letter="T"><span class="letter-glyph" aria-hidden="true">T</span><span class="letter-choice-label">Press <kbd>T</kbd></span></button>
-          <button type="button" class="report-button letter-choice" data-letter="X"><span class="letter-glyph" aria-hidden="true">X</span><span class="letter-choice-label">Press <kbd>X</kbd></span></button>
-          <button type="button" class="report-button letter-choice" data-letter="L"><span class="letter-glyph" aria-hidden="true">L</span><span class="letter-choice-label">Press <kbd>L</kbd></span></button>
+        <div class="report-topline"><p id="report-progress" class="eyebrow">Letter + color</p><span id="report-timer" class="report-timer" aria-label="Time remaining">1.5 s</span></div>
+        <h1 id="report-prompt" tabindex="-1">Which colored letter did you see?</h1>
+        <p id="report-hint" class="focus-copy">Click one choice or press its number. Choose your best answer.</p>
+        <div class="report-time-track" aria-hidden="true"><div id="report-time-fill"></div></div>
+        <div id="conjunction-options" class="report-options conjunction-options" role="group" aria-label="Choose the target letter and color">
+          <button type="button" class="report-button conjunction-choice choice-red" data-choice="1" data-color="red" data-letter="T" aria-label="Red T, key 1"><span class="letter-glyph" aria-hidden="true">T</span><span class="choice-label">Red T</span><kbd>1</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-red" data-choice="2" data-color="red" data-letter="X" aria-label="Red X, key 2"><span class="letter-glyph" aria-hidden="true">X</span><span class="choice-label">Red X</span><kbd>2</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-red" data-choice="3" data-color="red" data-letter="L" aria-label="Red L, key 3"><span class="letter-glyph" aria-hidden="true">L</span><span class="choice-label">Red L</span><kbd>3</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-green" data-choice="4" data-color="green" data-letter="T" aria-label="Green T, key 4"><span class="letter-glyph" aria-hidden="true">T</span><span class="choice-label">Green T</span><kbd>4</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-green" data-choice="5" data-color="green" data-letter="X" aria-label="Green X, key 5"><span class="letter-glyph" aria-hidden="true">X</span><span class="choice-label">Green X</span><kbd>5</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-green" data-choice="6" data-color="green" data-letter="L" aria-label="Green L, key 6"><span class="letter-glyph" aria-hidden="true">L</span><span class="choice-label">Green L</span><kbd>6</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-blue" data-choice="7" data-color="blue" data-letter="T" aria-label="Blue T, key 7"><span class="letter-glyph" aria-hidden="true">T</span><span class="choice-label">Blue T</span><kbd>7</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-blue" data-choice="8" data-color="blue" data-letter="X" aria-label="Blue X, key 8"><span class="letter-glyph" aria-hidden="true">X</span><span class="choice-label">Blue X</span><kbd>8</kbd></button>
+          <button type="button" class="report-button conjunction-choice choice-blue" data-choice="9" data-color="blue" data-letter="L" aria-label="Blue L, key 9"><span class="letter-glyph" aria-hidden="true">L</span><span class="choice-label">Blue L</span><kbd>9</kbd></button>
         </div>
       </div>
     </section>
 
     <section id="feedback-screen" class="screen centered-screen" aria-labelledby="feedback-title" tabindex="-1" hidden>
       <div class="focus-card feedback-card">
-        <p class="eyebrow">Practice feedback</p>
-        <h1 id="feedback-title">Practice trial complete</h1>
+        <p class="eyebrow">Your last 10 trials</p>
+        <h1 id="feedback-title">Set complete</h1>
         <p id="feedback-copy" class="focus-copy"></p>
-        <div id="feedback-detail" class="feedback-detail"></div>
-        <button id="next-practice-button" type="button" class="button button-primary">Next practice trial <span aria-hidden="true">→</span></button>
-      </div>
-    </section>
-
-    <section id="break-screen" class="screen centered-screen" aria-labelledby="break-title" tabindex="-1" hidden>
-      <div class="focus-card break-card">
-        <p class="eyebrow">A moment to pause</p>
-        <div class="break-mark" aria-hidden="true"><span></span><span></span></div>
-        <h1 id="break-title">Take a short break</h1>
-        <p id="break-copy" class="focus-copy">Rest your eyes. Continue when you are ready.</p>
-        <div id="break-summary" class="break-summary"></div>
-        <button id="continue-button" type="button" class="button button-primary">Continue <span aria-hidden="true">→</span></button>
+        <p id="feedback-detail" class="feedback-detail"></p>
+        <p id="feedback-distance" class="feedback-distance"></p>
+        <p id="feedback-countdown" class="feedback-countdown">Next set in 1.0 s</p>
       </div>
     </section>
 
@@ -480,22 +522,28 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       <div class="section-heading results-heading">
         <p class="eyebrow">Session complete</p>
         <h1 id="results-title">Your results</h1>
-        <p id="results-summary">Here is a summary of your completed main trials.</p>
+        <p id="results-summary">Here is a summary of your answers across the adaptive demonstration.</p>
+      </div>
+      <div class="result-metrics">
+        <div><span>Average accuracy</span><strong id="results-accuracy">—</strong><small>Correct letter and color, across all finished trials</small></div>
+        <div><span>Average distance (screen px)</span><strong id="results-distance">—</strong><small>Mean target distance from central fixation</small></div>
       </div>
       <div class="results-table-wrap">
         <table class="results-table">
-          <caption class="sr-only">Main-trial results by distance from fixation</caption>
-          <thead><tr><th scope="col">Distance</th><th scope="col">Trials</th><th scope="col">Letter correct</th><th scope="col">Color swaps</th><th scope="col">Absent-color errors</th><th scope="col">Digit hit rate</th></tr></thead>
+          <caption class="sr-only">Response categories across all answered trials</caption>
+          <thead><tr><th scope="col">Response category</th><th scope="col">Count</th><th scope="col">Percent of answers</th></tr></thead>
           <tbody id="results-table-body"></tbody>
         </table>
       </div>
-      <p id="results-note" class="results-note">Only completed main trials are included in this summary.</p>
+      <p id="results-digit-summary" class="results-detail"></p>
+      <p id="results-staircase-summary" class="results-detail"></p>
+      <p id="results-note" class="results-note">Unanswered trials are recorded separately.</p>
       <div class="results-save-card">
         <div><h2>Keep a copy</h2><p id="save-detail" role="status" aria-live="polite">You can download your session data below.</p></div>
         <button id="retry-save-button" type="button" class="button button-secondary">Retry saving</button>
       </div>
-      <div class="download-actions"><button id="download-trials-button" type="button" class="button button-primary">Download trial CSV</button><button id="download-blocks-button" type="button" class="button button-secondary">Download block CSV</button><button id="download-json-button" type="button" class="button button-secondary">Download JSON backup</button></div>
-      <div class="results-bottom"><p class="muted">Keep your participant code with your downloads.</p><button id="restart-button" type="button" class="button button-text">Start another session <span aria-hidden="true">→</span></button></div>
+      <div class="download-actions"><button id="download-trials-button" type="button" class="button button-primary">Download trial CSV</button><button id="download-blocks-button" type="button" class="button button-secondary">Download summary CSV</button><button id="download-json-button" type="button" class="button button-secondary">Download JSON backup</button></div>
+      <div class="results-bottom"><p class="muted">Your student and section IDs are included in your downloads.</p><button id="restart-button" type="button" class="button button-text">Start another session <span aria-hidden="true">→</span></button></div>
     </section>
   </main>
 
@@ -506,10 +554,10 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 
   <div id="pause-overlay" class="pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title" aria-describedby="pause-reason" hidden>
     <div class="pause-card">
-      <p class="eyebrow">Trial paused</p>
-      <h1 id="pause-title">Let’s try that trial again</h1>
+      <p class="eyebrow">Demonstration paused</p>
+      <h1 id="pause-title">Continue when you are ready</h1>
       <p id="pause-reason">The display was interrupted. Return to the experiment, then restart this trial.</p>
-      <button id="resume-trial-button" type="button" class="button button-primary">Restart this trial <span aria-hidden="true">→</span></button>
+      <button id="resume-trial-button" type="button" class="button button-primary">Continue demonstration <span aria-hidden="true">→</span></button>
     </div>
   </div>
 
@@ -534,10 +582,10 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   ];
 
   var TRIAL_HEADERS = Object.freeze((
-    "record_id,session_id,participant_id,class_code,task_version,phase,block,planned_trial,attempt,trial_status,interruption_reason,timestamp_utc,timestamp_local,timezone,utc_offset_minutes,distance,quadrant,target_position,target_letter,target_color,distractor_color,absent_color,response_color,response_letter,color_rt_ms,letter_rt_ms,letter_correct,color_correct,response_category,zero_targets,digit_hits,digit_misses,digit_false_alarms,digit_hit_rate,mean_digit_hit_rt_ms,stream_duration_planned_ms,stream_duration_actual_ms,digit_duration_ms,peripheral_onset_planned_ms,peripheral_onset_actual_ms,peripheral_duration_planned_ms,peripheral_duration_actual_ms,response_window_ms,grace_interval_ms,frame_count,estimated_dropped_frames,max_frame_gap_ms,timing_warning,skipped_digits,viewport_width,viewport_height,canvas_width,canvas_height,device_pixel_ratio,letter_font_px,target_x_px,target_y_px,distractor_x_px,distractor_y_px,eccentricity_px,fullscreen,session_seed,digit_seed,digits_json,digit_onsets_json,digit_presses_json,digit_press_results_json"
+    "record_id,session_id,participant_id,class_code,task_version,phase,block,planned_trial,attempt,trial_status,interruption_reason,timestamp_utc,timestamp_local,timezone,utc_offset_minutes,distance,quadrant,target_position,target_letter,target_color,distractor_color,absent_color,response_color,response_letter,color_rt_ms,letter_rt_ms,letter_correct,color_correct,response_category,zero_targets,digit_hits,digit_misses,digit_false_alarms,digit_hit_rate,mean_digit_hit_rt_ms,stream_duration_planned_ms,stream_duration_actual_ms,digit_duration_ms,peripheral_onset_planned_ms,peripheral_onset_actual_ms,peripheral_duration_planned_ms,peripheral_duration_actual_ms,response_window_ms,grace_interval_ms,frame_count,estimated_dropped_frames,max_frame_gap_ms,timing_warning,skipped_digits,viewport_width,viewport_height,canvas_width,canvas_height,device_pixel_ratio,letter_font_px,target_x_px,target_y_px,distractor_x_px,distractor_y_px,eccentricity_px,fullscreen,session_seed,digit_seed,digits_json,digit_onsets_json,digit_presses_json,digit_press_results_json,first_name,last_name,student_id,section_id"
   ).split(","));
   var BLOCK_HEADERS = Object.freeze((
-    "record_id,session_id,participant_id,class_code,task_version,phase,block,distance,timestamp_utc,timestamp_local,timezone,utc_offset_minutes,planned_trials,completed_trials,interrupted_attempts,timing_warning_trials,correct,conjunction_report,color_feature_error,letter_feature_error,letter_feature_conjunction_error,color_letter_feature_error,letter_correct_n,swap_rate_given_letter_correct,absent_color_rate_given_letter_correct,zero_targets,digit_hits,digit_misses,digit_false_alarms,digit_hit_rate,session_seed"
+    "record_id,session_id,participant_id,class_code,task_version,phase,block,distance,timestamp_utc,timestamp_local,timezone,utc_offset_minutes,planned_trials,completed_trials,interrupted_attempts,timing_warning_trials,correct,conjunction_report,color_feature_error,letter_feature_error,letter_feature_conjunction_error,color_letter_feature_error,letter_correct_n,swap_rate_given_letter_correct,absent_color_rate_given_letter_correct,zero_targets,digit_hits,digit_misses,digit_false_alarms,digit_hit_rate,session_seed,first_name,last_name,student_id,section_id,presented_trials,timeout_trials,mean_eccentricity_px,joint_accuracy"
   ).split(","));
 
   // Seeded pseudorandomness makes an interrupted session reproducible.
@@ -600,75 +648,78 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 
   function createSchedule(seed) {
     var random = rngFor(seed);
-    var blocks = [[], [], []];
-    DISTANCES.forEach(function (distance) {
-      var lettersByQuadrant = QUADRANTS.map(function () {
-        return shuffled(LETTERS, random);
-      });
-      var pairs = shuffled(colorPairs().concat(colorPairs()), random);
-      var positions = shuffled([
-        "left", "left", "left", "left", "left", "left",
-        "right", "right", "right", "right", "right", "right"
-      ], random);
-      for (var block = 0; block < 3; block += 1) {
-        QUADRANTS.forEach(function (quadrant, q) {
-          var index = block * 4 + q;
-          blocks[block].push(plan(
-            "main", block + 1, distance, quadrant,
-            lettersByQuadrant[q][block], pairs[index], positions[index]
-          ));
-        });
-      }
-    });
     var main = [];
-    blocks.forEach(function (block) {
-      main = main.concat(shuffled(block, random));
-    });
+    // Five copies of the quadrant-by-letter crossing give 60 trials. Within
+    // each copy, independently shuffled color-pair/position combinations keep
+    // those features balanced without tying them to letters or locations.
+    for (var repetition = 0; repetition < 5; repetition += 1) {
+      var features = [];
+      colorPairs().forEach(function (pair) {
+        ["left", "right"].forEach(function (position) {
+          features.push({ pair: pair, position: position });
+        });
+      });
+      features = shuffled(features, random);
+      var index = 0;
+      QUADRANTS.forEach(function (quadrant) {
+        LETTERS.forEach(function (letter) {
+          var feature = features[index++];
+          main.push(plan("main", 1, "adaptive", quadrant, letter, feature.pair, feature.position));
+        });
+      });
+    }
+    main = shuffled(main, random);
     main.forEach(function (trial, index) { trial.planned_trial = index + 1; });
-
-    var practiceLetters = shuffled(LETTERS.concat(LETTERS), random);
-    var practicePairs = shuffled(colorPairs(), random);
-    var practice = [];
-    DISTANCES.forEach(function (distance, d) {
-      var quadrants = shuffled(QUADRANTS, random);
-      var positions = shuffled(["left", "right"], random);
-      for (var i = 0; i < 2; i += 1) {
-        var index = d * 2 + i;
-        practice.push(plan(
-          "practice", 0, distance, quadrants[i],
-          practiceLetters[index], practicePairs[index], positions[i]
-        ));
-      }
-    });
-    practice = shuffled(practice, random);
-    practice.forEach(function (trial, index) { trial.planned_trial = index + 1; });
-    return { practice: practice, main: main };
+    return { practice: [], main: main };
   }
 
-  function makeDigits(seed) {
+  function makeDigits(seed, count) {
+    if (count === undefined) count = 12;
+    if (!Number.isSafeInteger(count) || count < 1) throw new RangeError("Digit count must be a positive integer.");
     var random = rngFor(seed);
-    // Reject whole streams, rather than adding zeros at selected positions.
-    for (var attempt = 0; attempt < 10000; attempt += 1) {
-      var digits = [];
-      var cooldown = 0;
-      var zeros = 0;
-      for (var i = 0; i < 30; i += 1) {
-        var digit;
-        if (cooldown > 0) {
-          digit = 1 + Math.floor(random() * 9);
-          cooldown -= 1;
-        } else {
-          digit = Math.floor(random() * 10);
-          if (digit === 0) {
-            zeros += 1;
-            cooldown = 2;
-          }
-        }
-        digits.push(digit);
+    var digits = [];
+    var cooldown = 0;
+    // The paper specifies that the two digits after a zero cannot be targets.
+    // Uniform draws over eligible digits are an implementation assumption; the
+    // paper does not specify their probabilities. Do not condition or reject a
+    // stream based on its zero count: 0 through ceil(count / 3) zeros are
+    // possible, with unequal probabilities for different counts.
+    for (var i = 0; i < count; i += 1) {
+      var digit;
+      if (cooldown > 0) {
+        digit = 1 + Math.floor(random() * 9);
+        cooldown -= 1;
+      } else {
+        digit = Math.floor(random() * 10);
+        if (digit === 0) cooldown = 2;
       }
-      if (zeros >= 2 && zeros <= 6) return digits;
+      digits.push(digit);
     }
-    throw new Error("Unable to generate a valid digit stream.");
+    return digits;
+  }
+
+  function adjustDistance(distance, correct, presented, settings) {
+    if (!settings || typeof settings !== "object") throw new TypeError("Distance settings are required.");
+    var minimum = settings.DISTANCE_MIN;
+    var maximum = settings.DISTANCE_MAX;
+    var step = settings.DISTANCE_STEP;
+    if (![minimum, maximum, step].every(Number.isFinite) ||
+        minimum < 0 || maximum > 0.5 || minimum >= maximum || step <= 0) {
+      throw new RangeError("Invalid distance bounds or adjustment step.");
+    }
+    if (!Number.isFinite(distance) || distance < minimum || distance > maximum) {
+      throw new RangeError("Distance must be inside its configured bounds.");
+    }
+    if (!Number.isSafeInteger(presented) || presented < 1 ||
+        !Number.isSafeInteger(correct) || correct < 0 || correct > presented) {
+      throw new RangeError("Correct and presented counts must be valid nonnegative integers with at least one presented trial.");
+    }
+    // The app calls this after each set of ten presented trials, counting a
+    // timeout in the denominator but not as a correct color-and-letter report.
+    // Thus 0–7/10 moves closer, 8/10 holds, and 9–10/10 moves farther.
+    var accuracy = correct / presented;
+    var next = distance + (accuracy < 0.75 ? -step : accuracy > 0.8 ? step : 0);
+    return Math.max(minimum, Math.min(maximum, next));
   }
 
   function classify(targetLetter, targetColor, distractorColor, responseLetter, responseColor) {
@@ -761,20 +812,29 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     if (!Number.isFinite(width) || !Number.isFinite(height) || width < 122 || height < 64) {
       throw new RangeError("The canvas is too small for the fixed-size stimuli.");
     }
-    if (DISTANCES.indexOf(distance) === -1 || QUADRANTS.indexOf(quadrant) === -1 ||
+    var numericDistance = typeof distance === "number";
+    if ((numericDistance ? !Number.isFinite(distance) || distance < 0 : DISTANCES.indexOf(distance) === -1) ||
+        QUADRANTS.indexOf(quadrant) === -1 ||
         (targetPosition !== "left" && targetPosition !== "right")) {
       throw new RangeError("Invalid distance, quadrant, or target position.");
     }
+    if (numericDistance && width < 152) throw new RangeError("The canvas is too small for target-centered stimuli.");
     var factors = { near: 0.17, middle: 0.27, far: 0.37 };
     var centerX = width / 2;
     var centerY = height / 2;
     var xSign = quadrant.indexOf("left") !== -1 ? -1 : 1;
     var ySign = quadrant.indexOf("upper") !== -1 ? -1 : 1;
-    // 45 px to the outer glyph center plus a conservative 16 px half-glyph.
-    var offsetX = Math.min(width * factors[distance], Math.max(0, width / 2 - 61));
-    var stringX = centerX + xSign * offsetX;
-    var stringY = centerY + ySign * height * 0.25;
     var targetIndex = targetPosition === "left" ? 1 : 2;
+    var factor = numericDistance ? distance : factors[distance];
+    // Numeric distances control the actual target center, independent of which
+    // inner position contains it. The farthest flanker is 60 px from the target;
+    // a common 76 px margin includes a conservative 16 px half-glyph. A common
+    // bound prevents the target side from changing effective eccentricity.
+    // Legacy distance names still control the string center with a 61 px margin.
+    var margin = numericDistance ? 76 : 61;
+    var offsetX = Math.min(width * factor, Math.max(0, width / 2 - margin));
+    var stringX = centerX + xSign * offsetX - (numericDistance ? (targetIndex === 1 ? -15 : 15) : 0);
+    var stringY = centerY + ySign * height * 0.25;
     var positions = [-45, -15, 15, 45].map(function (offset, index) {
       return {
         x: stringX + offset,
@@ -789,6 +849,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       center_y: centerY,
       letter_font_px: 32,
       digit_font_px: 24,
+      used_distance: offsetX === width * factor ? factor : offsetX / width,
       string_center_x: stringX,
       string_center_y: stringY,
       positions: positions,
@@ -814,7 +875,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function summarize(rows) {
     if (!Array.isArray(rows)) throw new TypeError("Rows must be an array.");
     var result = {
-      n: 0, letter_correct: null, color_correct: null,
+      n: 0, timeout_n: 0, presented_n: 0, joint_accuracy: null, mean_eccentricity_px: null,
+      letter_correct: null, color_correct: null,
       conjunction_report: 0, color_feature_error: 0, letter_feature_error: 0,
       letter_feature_conjunction_error: 0, color_letter_feature_error: 0,
       correct: 0, letter_correct_n: 0,
@@ -823,8 +885,22 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       digit_hit_rate: null
     };
     var colorCorrect = 0;
+    var eccentricitySum = 0;
+    var eccentricityCount = 0;
     rows.forEach(function (row) {
-      if (!row || row.trial_status !== "complete") return;
+      if (!row || (row.trial_status !== "complete" && row.trial_status !== "timeout")) return;
+      result.presented_n += 1;
+      if (Number.isFinite(row.eccentricity_px) && row.eccentricity_px >= 0) {
+        eccentricitySum += row.eccentricity_px;
+        eccentricityCount += 1;
+      }
+      ["zero_targets", "digit_hits", "digit_misses", "digit_false_alarms"].forEach(function (key) {
+        result[key] += count(row[key]);
+      });
+      if (row.trial_status === "timeout") {
+        result.timeout_n += 1;
+        return;
+      }
       result.n += 1;
       var category = row.response_category;
       if (CATEGORIES.indexOf(category) !== -1) result[category] += 1;
@@ -834,14 +910,13 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       var thisColorCorrect = row.color_correct == null ? inferredColor : truth(row.color_correct);
       if (letterCorrect) result.letter_correct_n += 1;
       if (thisColorCorrect) colorCorrect += 1;
-      ["zero_targets", "digit_hits", "digit_misses", "digit_false_alarms"].forEach(function (key) {
-        result[key] += count(row[key]);
-      });
     });
     if (result.n) {
       result.letter_correct = result.letter_correct_n / result.n;
       result.color_correct = colorCorrect / result.n;
     }
+    if (result.presented_n) result.joint_accuracy = result.correct / result.presented_n;
+    if (eccentricityCount) result.mean_eccentricity_px = eccentricitySum / eccentricityCount;
     if (result.letter_correct_n) {
       result.swap_rate_given_letter_correct = result.conjunction_report / result.letter_correct_n;
       result.absent_color_rate_given_letter_correct = result.color_feature_error / result.letter_correct_n;
@@ -881,6 +956,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   return Object.freeze({
     createSchedule: createSchedule,
     makeDigits: makeDigits,
+    adjustDistance: adjustDistance,
     classify: classify,
     scoreDigits: scoreDigits,
     geometry: geometry,
@@ -1207,13 +1283,14 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   const $ = (id) => document.getElementById(id);
   const activeKey = C.STORAGE_PREFIX + ":active";
   const archiveKey = C.STORAGE_PREFIX + ":archive";
-  const mainBlocks = Math.max(1, Math.min(3, Number(C.MAIN_BLOCKS) || 3));
   const digitDuration = C.STREAM_MS / C.DIGIT_COUNT;
   const peripheralOnset = (C.PERIPHERAL_ONSET_DIGIT - 1) * digitDuration;
   const peripheralDuration = C.PERIPHERAL_DIGITS * digitDuration;
-  const colorKeys = {"1":"red", "2":"green", "3":"blue"};
+  const reportChoices = ["red", "green", "blue"].flatMap(color=>["T", "X", "L"].map(letter=>({color,letter})));
   const colors = ["red", "green", "blue"];
   const screens = Array.from(document.querySelectorAll(".screen"));
+  // Only counts are used here. Each participant receives a separately seeded schedule.
+  const countSchedule = configuredSchedule(0);
   let session = null;
   let attempt = null;
   let phaseState = "welcome";
@@ -1221,6 +1298,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   let runToken = 0;
   let spaceHeld = false;
   let reportStarted = 0;
+  let reportDeadline = 0;
+  let feedbackStarted = 0;
   let storageFailed = false;
   let uploadPromise = null;
   let beginInFlight = false;
@@ -1250,6 +1329,17 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   function round(n) { return Number.isFinite(n) ? Math.round(n*1000)/1000 : null; }
   function percent(n) { return n === null || !Number.isFinite(n) ? "—" : Math.round(n*100)+"%"; }
+  function configuredSchedule(seed) { return Core.createSchedule(seed); }
+  function mainTaskDescription(schedule) { return schedule.main.length+" trials in sets of "+C.ADJUST_EVERY+", with distance adjusted between sets"; }
+  function durationEstimate(schedule) {
+    const pauses=Math.max(0,Math.ceil(schedule.main.length/C.ADJUST_EVERY)-1);
+    const seconds=Math.ceil((schedule.main.length*(C.FIXATION_MS+C.STREAM_MS+C.GRACE_MS+C.REPORT_TIMEOUT_MS)+pauses*C.ADJUST_PAUSE_MS)/1000);
+    return "About "+Math.floor(seconds/60)+":"+String(seconds%60).padStart(2,"0")+" max";
+  }
+  function digitScoreText(hits,targets,rate) {
+    return targets>0 ? hits+" / "+targets+" zeros detected ("+percent(rate)+")" :
+      "No zeros appeared; hit rate is not applicable";
+  }
   function timestamp() {
     const d = new Date();
     const offset = -d.getTimezoneOffset();
@@ -1284,13 +1374,16 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function plans() { return session ? session.schedule[session.phase] : []; }
   function currentPlan() { return plans()[session.cursor]; }
   function updateProgress() {
-    if(!session) {setText("phase-label","CLASSROOM DEMONSTRATION");return;}
-    const practice=session.phase === "practice";
+    if(!session) {
+      setText("phase-label","CLASSROOM DEMONSTRATION");
+      setText("trial-progress",countSchedule.main.length+" total trials");
+      return;
+    }
     const total=plans().length;
-    const shown=Math.min(session.cursor+1,total);
-    setText("phase-label",practice ? "PRACTICE" : "MAIN TASK");
-    setText("trial-progress",session.stage === "results" ? "Complete" :
-      (practice ? "Practice " : "Trial ")+shown+" / "+total);
+    const feedback=session.stage==="adjustment_feedback";
+    setText("phase-label",feedback ? "SET "+Math.ceil(session.cursor/C.ADJUST_EVERY)+" COMPLETE" : "ADAPTIVE DEMONSTRATION");
+    setText("trial-progress",session.stage === "results" ? "Complete · "+total+" trials" :
+      feedback ? session.cursor+" / "+total+" complete" : "Trial "+Math.min(session.cursor+1,total)+" / "+total);
     $("progress-fill").style.width=(100*session.cursor/Math.max(1,total))+"%";
   }
   function renderSaveStatus() {
@@ -1310,12 +1403,12 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       const unqueued=session.trials.some(r=>!session.queued_trial_ids.includes(r.record_id)) ||
         session.blocks.some(r=>!session.queued_block_ids.includes(r.record_id));
       label=unqueued ? "Saved on this device" : "Save confirmed";
-      detail=unqueued ? "Your current block is saved on this device. It will be sent at the next break." : "Google Sheets confirmed all queued data.";
+      detail=unqueued ? "Your responses are saved on this device. They will be sent when the demonstration ends." : "Google Sheets confirmed all queued data.";
     } else if(collectorReachable === false) {
       label="Collector unavailable";
-      detail="The class collector did not respond. Your responses will be kept on this device and saving will be retried at a break.";
+      detail="The class collector did not respond. Your responses will be kept on this device and saving will be retried when the demonstration ends.";
     } else {
-      label="Ready to collect"; detail="Data are saved at the practice/main block breaks and when you finish.";
+      label="Ready to collect"; detail="Data are saved on this device after each trial and sent when you finish.";
     }
     if(syncStatus.message && /memory|storage|quota/i.test(syncStatus.message)) detail += " "+syncStatus.message;
     setText("save-status",label); setText("save-detail",detail);
@@ -1333,7 +1426,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     const trialRows=session.trials.filter(r=>!session.queued_trial_ids.includes(r.record_id));
     const blockRows=session.blocks.filter(r=>!session.queued_block_ids.includes(r.record_id));
     if(!trialRows.length && !blockRows.length) return;
-    // At most one small block at a time in normal use; chunk recovery of older sessions.
+    // Upload bounded batches at block breaks and when recovering older sessions.
     while(trialRows.length || blockRows.length) {
       const t=trialRows.splice(0,24), b=blockRows.splice(0,12);
       client.enqueue({session_id:session.id,trials:t,blocks:b});
@@ -1369,18 +1462,24 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   async function newSession() {
     if(!deviceOK()) {updateDeviceWarning();$("device-warning").scrollIntoView({block:"center"});return;}
-    const participant=$("participant-code").value.trim();
-    const classCode=$("class-code").value.trim();
-    if(!/^[A-Za-z0-9_-]{0,40}$/.test(participant) || !/^[A-Za-z0-9_-]{0,40}$/.test(classCode)) {
-      setText("setup-notice","Use only letters, numbers, underscores, or hyphens in the participant and class codes (maximum 40 characters).");
-      $("setup-notice").hidden=false; return;
-    }
+    const firstName=$("first-name").value.trim().replace(/\s+/g," ");
+    const lastName=$("last-name").value.trim().replace(/\s+/g," ");
+    const studentId=$("student-id").value.trim();
+    const sectionId=$("section-id").value.trim();
+    const namePattern=/^[\p{L}\p{M}][\p{L}\p{M} .’'-]*$/u;
+    let notice="",focusId="";
+    if(!firstName || firstName.length>80 || !namePattern.test(firstName)) {notice="Enter your first name (up to 80 characters).";focusId="first-name";}
+    else if(!lastName || lastName.length>80 || !namePattern.test(lastName)) {notice="Enter your last name (up to 80 characters).";focusId="last-name";}
+    else if(!/^[0-9]{1,30}$/.test(studentId)) {notice="Enter your student ID using digits only (up to 30 digits).";focusId="student-id";}
+    else if(!/^[A-Za-z0-9][A-Za-z0-9 _-]{0,39}$/.test(sectionId)) {notice="Enter your section ID using letters, numbers, spaces, underscores, or hyphens (up to 40 characters).";focusId="section-id";}
+    if(notice) {setText("setup-notice",notice);$("setup-notice").hidden=false;$(focusId).focus();return;}
     $("start-button").disabled=true;
     if(session) archiveCurrent();
-    const id=uuid(), seed=randomSeed(), schedule=Core.createSchedule(seed);
-    schedule.main=schedule.main.slice(0,mainBlocks*12);
-    session={id,seed,participant_id:participant||("P-"+id.slice(0,8)),class_code:classCode,
-      task_version:C.TASK_VERSION,started_at_utc:new Date().toISOString(),phase:"practice",cursor:0,
+    const id=uuid(), seed=randomSeed(), schedule=configuredSchedule(seed);
+    session={id,seed,first_name:firstName,last_name:lastName,student_id:studentId,section_id:sectionId,
+      participant_id:studentId,class_code:sectionId,
+      task_version:C.TASK_VERSION,started_at_utc:new Date().toISOString(),phase:"main",cursor:0,
+      currentDistance:C.DISTANCE_START,adjustmentFeedback:null,
       stage:"instructions",schedule,trials:[],blocks:[],attempts:{},queued_trial_ids:[],queued_block_ids:[],pendingAttempt:null,
       config_snapshot:JSON.parse(JSON.stringify(C))};
     persist();
@@ -1396,12 +1495,12 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   function ready(copy) {
     phaseState="ready";session.stage="ready";persist();show("ready-screen");
-    setText("ready-title",session.phase === "practice" ? "First, try six practice trials." : "Ready for the main task.");
-    setText("ready-copy",copy || "Keep looking at the center. Press Space for every 0. Then report the peripheral target’s color and letter.");
+    setText("ready-title","Ready for "+(plans().length-session.cursor)+" trials?");
+    setText("ready-copy",copy || "Keep looking at the center. Press Space for every 0. Then choose the colored target letter within 1.5 seconds.");
     $("begin-trial-button").disabled=false;
   }
   async function begin() {
-    if(beginInFlight || attempt || !["ready","break","paused"].includes(phaseState)) return;
+    if(beginInFlight || attempt || !["ready","paused","paused_feedback"].includes(phaseState)) return;
     beginInFlight=true;
     try {
       if(uploadPromise) await uploadPromise;
@@ -1409,13 +1508,15 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         try {await document.documentElement.requestFullscreen();} catch (_) {/* Fullscreen is optional. */}
       }
       if(!deviceOK()) {setText("ready-copy","Please enlarge your browser window before starting. A minimum of "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels is needed to keep all letters visible.");return;}
-      startTrial();
+      if(phaseState==="paused_feedback") showAdjustmentFeedback();
+      else startTrial();
     } finally {beginInFlight=false;}
   }
   function blankRow(headers) {return Object.fromEntries(headers.map(k=>[k,null]));}
   function baseRow(headers) {
     return Object.assign(blankRow(headers),{record_id:uuid(),session_id:session.id,participant_id:session.participant_id,
-      class_code:session.class_code,task_version:session.task_version,session_seed:session.seed},timestamp());
+      class_code:session.class_code,task_version:session.task_version,session_seed:session.seed,
+      first_name:session.first_name,last_name:session.last_name,student_id:session.student_id,section_id:session.section_id},timestamp());
   }
   function prepareCanvas(plan) {
     const canvas=$("stimulus-canvas");
@@ -1447,9 +1548,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function startTrial() {
     if(attempt || !session || !currentPlan()) return;
     if(!deviceOK()) {ready("Enlarge the window before continuing.");return;}
-    const plan=currentPlan();
+    const plan={...currentPlan(),distance:session.currentDistance};
     phaseState="fixation";session.stage="trial";show("task-screen");
-    setText("task-caption",session.phase === "practice" ? "Practice · watch the center" : "Watch the center");
+    setText("task-caption","Watch the center · "+(session.cursor+1)+" / "+plans().length);
     setText("task-note","Press Space whenever 0 appears. Keep your eyes at the center.");
     const key=plan.phase+"-"+plan.planned_trial;
     const attemptNumber=(session.attempts[key]||0)+1;session.attempts[key]=attemptNumber;
@@ -1460,10 +1561,11 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       peripheral_onset_planned_ms:round(peripheralOnset),peripheral_duration_planned_ms:round(peripheralDuration),
       viewport_width:innerWidth,viewport_height:innerHeight,fullscreen:Boolean(document.fullscreenElement)});
     const canvas=prepareCanvas(plan), g=canvas.geometry;
+    row.distance=g.used_distance;plan.distance=g.used_distance;
     Object.assign(row,{canvas_width:canvas.width,canvas_height:canvas.height,device_pixel_ratio:canvas.dpr,
       letter_font_px:g.letter_font_px,target_x_px:round(g.target_x-g.center_x),target_y_px:round(g.target_y-g.center_y),
       distractor_x_px:round(g.distractor_x-g.center_x),distractor_y_px:round(g.distractor_y-g.center_y),eccentricity_px:round(g.eccentricity_px)});
-    const digits=Core.makeDigits(digitSeed);
+    const digits=Core.makeDigits(digitSeed,C.DIGIT_COUNT);
     row.digits_json=JSON.stringify(digits);
     attempt={plan,row,canvas,digits,onsets:Array(C.DIGIT_COUNT).fill(null),presses:[],
       fixationStart:null,streamStart:null,streamEnd:null,lastFrame:null,lastDigit:-1,visible:false,
@@ -1526,107 +1628,134 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function finishTimedDisplay() {
     if(!attempt) return;
     cancelAnimationFrame(frameHandle);finalizeMetrics();
-    phaseState="color";session.stage="color";persist();
+    phaseState="report";session.stage="report";persist();
     show("report-screen");
-    $("color-options").hidden=false;$("letter-options").hidden=true;
-    setText("report-prompt","What color was the target letter?");
-    setText("report-hint","Report the color of T, X, or L. Choose your best answer.");
-    setText("report-progress","1 of 2 · COLOR");
-    reportStarted=performance.now();
+    setText("report-prompt","Which colored letter did you see?");
+    setText("report-hint","Click one choice or press its number. Choose your best answer.");
+    setText("report-progress","LETTER + COLOR");
+    reportStarted=performance.now();reportDeadline=reportStarted+C.REPORT_TIMEOUT_MS;
+    const token=attempt.token;
+    reportTick(reportStarted,token);
   }
-  function reportColor(color) {
-    if(phaseState!=="color"||!attempt||!colors.includes(color)) return;
-    attempt.row.response_color=color;attempt.row.color_rt_ms=round(performance.now()-reportStarted);
-    phaseState="letter";session.stage="letter";persist();
-    $("color-options").hidden=true;$("letter-options").hidden=false;
-    setText("report-prompt","Which target letter did you see?");
-    setText("report-hint","Choose T, X, or L. Choose your best answer.");
-    setText("report-progress","2 of 2 · LETTER");reportStarted=performance.now();
-    $("report-prompt").focus({preventScroll:true});
+  function reportTick(now,token) {
+    if(!attempt || attempt.token!==token || phaseState!=="report") return;
+    const remaining=Math.max(0,reportDeadline-now);
+    setText("report-timer",(remaining/1000).toFixed(1)+" s");
+    $("report-time-fill").style.width=(100*remaining/C.REPORT_TIMEOUT_MS)+"%";
+    if(remaining<=0) {finishReport(null);return;}
+    frameHandle=requestAnimationFrame(t=>reportTick(t,token));
   }
-  function reportLetter(letter) {
-    if(phaseState!=="letter"||!attempt||!["T","X","L"].includes(letter)) return;
+  function reportChoice(color,letter) {
+    if(phaseState!=="report" || !attempt || !colors.includes(color) || !["T","X","L"].includes(letter)) return;
+    // A delayed timer must never allow a response after the declared deadline.
+    if(performance.now()>=reportDeadline) {finishReport(null);return;}
+    finishReport({color,letter});
+  }
+  function finishReport(choice) {
+    if(phaseState!=="report" || !attempt) return;
+    cancelAnimationFrame(frameHandle);
     const row=attempt.row;
-    row.response_letter=letter;row.letter_rt_ms=round(performance.now()-reportStarted);
-    row.letter_correct=letter===row.target_letter;row.color_correct=row.response_color===row.target_color;
-    row.response_category=Core.classify(row.target_letter,row.target_color,row.distractor_color,letter,row.response_color);
-    row.trial_status="complete";row.interruption_reason="";
-    session.trials.push(row);session.cursor++;session.pendingAttempt=null;attempt=null;
-    if(session.phase==="practice") {
-      phaseState="feedback";session.stage="practice_feedback";persist();practiceFeedback(row);
-    } else if(session.cursor>=plans().length) {
+    if(choice) {
+      row.response_letter=choice.letter;row.response_color=choice.color;
+      row.color_rt_ms=row.letter_rt_ms=round(performance.now()-reportStarted);
+      row.letter_correct=choice.letter===row.target_letter;row.color_correct=choice.color===row.target_color;
+      row.response_category=Core.classify(row.target_letter,row.target_color,row.distractor_color,choice.letter,choice.color);
+      row.trial_status="complete";
+    } else {
+      row.response_letter=null;row.response_color=null;row.color_rt_ms=null;row.letter_rt_ms=null;
+      row.letter_correct=null;row.color_correct=null;row.response_category="incomplete";row.trial_status="timeout";
+    }
+    row.interruption_reason="";
+    session.trials.push(row);session.cursor++;session.pendingAttempt=null;attempt=null;runToken++;
+    if(session.cursor>=plans().length) {
       makeBlockRows(row.block);phaseState="results";session.stage="results";persist();results();
-    } else if(session.cursor%12===0) {
-      makeBlockRows(row.block);phaseState="break";session.stage="block_break";persist();blockBreak();
-    } else {session.stage="ready";persist();startTrial();}
+    } else if(session.cursor%C.ADJUST_EVERY===0) {
+      const recent=session.trials.filter(r=>r.planned_trial>session.cursor-C.ADJUST_EVERY&&r.planned_trial<=session.cursor&&["complete","timeout"].includes(r.trial_status));
+      const summary=Core.summarize(recent);
+      const before=row.distance;
+      session.currentDistance=Core.adjustDistance(before,summary.correct,summary.presented_n,C);
+      session.adjustmentFeedback={set:session.cursor/C.ADJUST_EVERY,total:summary.presented_n,correct:summary.correct,
+        digit_hits:summary.digit_hits,zero_targets:summary.zero_targets,digit_hit_rate:summary.digit_hit_rate,
+        digit_false_alarms:summary.digit_false_alarms,distance_before:before,distance_after:session.currentDistance};
+      session.stage="adjustment_feedback";persist();showAdjustmentFeedback();
+    } else {phaseState="ready";session.stage="ready";persist();startTrial();}
   }
-  function practiceFeedback(row) {
-    show("feedback-screen");
-    setText("feedback-title",row.response_category==="correct"?"That’s the target.":"Here is what was shown.");
-    setText("feedback-copy","The target was "+row.target_color.toUpperCase()+" "+row.target_letter+". You reported "+row.response_color.toUpperCase()+" "+row.response_letter+".");
-    setText("feedback-detail","Center task: "+row.digit_hits+" of "+row.zero_targets+" zeros detected; "+row.digit_false_alarms+" extra Space press"+(row.digit_false_alarms===1?"":"es")+". Keep looking at the center throughout the stream.");
-    $("next-practice-button").textContent=session.cursor>=plans().length?"Finish practice":"Next practice trial";
+  function showAdjustmentFeedback() {
+    if(!session || !session.adjustmentFeedback || session.stage!=="adjustment_feedback") return;
+    cancelAnimationFrame(frameHandle);
+    phaseState="feedback";show("feedback-screen");
+    const f=session.adjustmentFeedback;
+    setText("feedback-title","Set "+f.set+" of "+Math.ceil(plans().length/C.ADJUST_EVERY)+" complete");
+    setText("feedback-copy",f.correct+" / "+f.total+" correct letter-and-color reports ("+percent(f.correct/f.total)+").");
+    setText("feedback-detail","Center task: "+digitScoreText(f.digit_hits,f.zero_targets,f.digit_hit_rate)+"; "+f.digit_false_alarms+" extra Space press"+(f.digit_false_alarms===1?"":"es")+".");
+    const direction=f.distance_after>f.distance_before ? "farther away" : f.distance_after<f.distance_before ? "closer" : "at the same distance";
+    setText("feedback-distance","The next set will be "+direction+".");
+    feedbackStarted=performance.now();
+    const token=++runToken;feedbackTick(feedbackStarted,token);
   }
-  async function nextPractice() {
-    if(phaseState!=="feedback") return;
-    if(session.cursor>=session.schedule.practice.length) {
-      makeBlockRows(0);queueUnsent();
-      session.phase="main";session.cursor=0;session.stage="ready";persist();
-      ready("Practice is complete. The main task has "+(mainBlocks*12)+" trials in "+mainBlocks+" block"+(mainBlocks===1?"":"s")+". You’ll see your results at the end.");
-      await flushAtBreak($("begin-trial-button"));
-    } else startTrial();
+  function feedbackTick(now,token) {
+    if(token!==runToken || phaseState!=="feedback" || !session) return;
+    const remaining=Math.max(0,C.ADJUST_PAUSE_MS-(now-feedbackStarted));
+    setText("feedback-countdown","Next set in "+(remaining/1000).toFixed(1)+" s");
+    if(remaining<=0) {
+      session.adjustmentFeedback=null;session.stage="ready";phaseState="ready";persist();startTrial();return;
+    }
+    frameHandle=requestAnimationFrame(t=>feedbackTick(t,token));
   }
   function makeBlockRows(block) {
-    ["near","middle","far"].forEach(distance=>{
-      if(session.blocks.some(r=>r.phase===session.phase&&r.block===block&&r.distance===distance)) return;
-      const selected=session.trials.filter(r=>r.phase===session.phase&&r.block===block&&r.distance===distance);
-      const summary=Core.summarize(selected);
-      const row=Object.assign(baseRow(Core.BLOCK_HEADERS),{
-        phase:session.phase,block,distance,planned_trials:plans().filter(p=>p.block===block&&p.distance===distance).length,
-        completed_trials:summary.n,interrupted_attempts:selected.filter(r=>r.trial_status!=="complete").length,
-        timing_warning_trials:selected.filter(r=>r.trial_status==="complete"&&r.timing_warning).length,
-        correct:summary.correct,conjunction_report:summary.conjunction_report,color_feature_error:summary.color_feature_error,
-        letter_feature_error:summary.letter_feature_error,letter_feature_conjunction_error:summary.letter_feature_conjunction_error,
-        color_letter_feature_error:summary.color_letter_feature_error,letter_correct_n:summary.letter_correct_n,
-        swap_rate_given_letter_correct:summary.swap_rate_given_letter_correct,
-        absent_color_rate_given_letter_correct:summary.absent_color_rate_given_letter_correct,
-        zero_targets:summary.zero_targets,digit_hits:summary.digit_hits,digit_misses:summary.digit_misses,
-        digit_false_alarms:summary.digit_false_alarms,digit_hit_rate:summary.digit_hit_rate});
-      session.blocks.push(row);
-    });
-    persist();
-  }
-  function blockBreak() {
-    show("break-screen");
-    const finished=Math.floor(session.cursor/12);
-    const rows=session.trials.filter(r=>r.phase==="main"&&r.block===finished);
-    const summary=Core.summarize(rows);
-    setText("break-title","Block "+finished+" of "+mainBlocks+" complete.");
-    setText("break-copy","Take a short break. Keep the same viewing distance for the next block.");
-    setText("break-summary","Center task: "+summary.digit_hits+" / "+summary.zero_targets+" zeros detected ("+percent(summary.digit_hit_rate)+").");
-    flushAtBreak($("continue-button"));
+    if(session.blocks.some(r=>r.phase===session.phase&&r.block===block)) return;
+    const selected=session.trials.filter(r=>r.phase===session.phase&&r.block===block);
+    const summary=Core.summarize(selected);
+    const row=Object.assign(baseRow(Core.BLOCK_HEADERS),{
+      phase:session.phase,block,distance:"adaptive",planned_trials:plans().filter(p=>p.block===block).length,
+      completed_trials:summary.n,presented_trials:summary.presented_n,timeout_trials:summary.timeout_n,
+      mean_eccentricity_px:round(summary.mean_eccentricity_px),joint_accuracy:summary.joint_accuracy,interrupted_attempts:selected.filter(r=>r.trial_status==="interrupted").length,
+      timing_warning_trials:selected.filter(r=>["complete","timeout"].includes(r.trial_status)&&r.timing_warning).length,
+      correct:summary.correct,conjunction_report:summary.conjunction_report,color_feature_error:summary.color_feature_error,
+      letter_feature_error:summary.letter_feature_error,letter_feature_conjunction_error:summary.letter_feature_conjunction_error,
+      color_letter_feature_error:summary.color_letter_feature_error,letter_correct_n:summary.letter_correct_n,
+      swap_rate_given_letter_correct:summary.swap_rate_given_letter_correct,
+      absent_color_rate_given_letter_correct:summary.absent_color_rate_given_letter_correct,
+      zero_targets:summary.zero_targets,digit_hits:summary.digit_hits,digit_misses:summary.digit_misses,
+      digit_false_alarms:summary.digit_false_alarms,digit_hit_rate:summary.digit_hit_rate});
+    session.blocks.push(row);persist();
   }
   function results() {
     show("results-screen");
     const rows=session.trials.filter(r=>r.phase==="main");
-    const summary=Core.summarize(rows);
-    setText("results-summary",summary.n+" main trials completed · participant "+session.participant_id);
+    const s=Core.summarize(rows);
+    setText("results-summary",s.presented_n+" trials finished · "+s.n+" answers · "+s.timeout_n+" unanswered · student "+session.student_id+" · section "+session.section_id);
+    setText("results-accuracy",percent(s.joint_accuracy));
+    setText("results-distance",s.mean_eccentricity_px===null ? "N/A" : s.mean_eccentricity_px.toFixed(1)+" px");
     const body=$("results-table-body");body.replaceChildren();
-    ["near","middle","far"].forEach(distance=>{
-      const s=Core.summarize(rows.filter(r=>r.distance===distance));
+    const labels=[
+      ["correct","Correct letter and color"],
+      ["conjunction_report","Correct letter, distractor color"],
+      ["color_feature_error","Correct letter, absent color"],
+      ["letter_feature_error","Wrong letter, target color"],
+      ["letter_feature_conjunction_error","Wrong letter, distractor color"],
+      ["color_letter_feature_error","Wrong letter, absent color"]
+    ];
+    labels.forEach(([key,label])=>{
       const tr=document.createElement("tr");
-      const values=[distance.charAt(0).toUpperCase()+distance.slice(1),s.n,percent(s.letter_correct),
-        s.conjunction_report+" ("+percent(s.swap_rate_given_letter_correct)+")",
-        s.color_feature_error+" ("+percent(s.absent_color_rate_given_letter_correct)+")",percent(s.digit_hit_rate)];
-      values.forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.appendChild(td);});body.appendChild(tr);
+      [label,s[key],s.n ? percent(s[key]/s.n) : "N/A"].forEach(value=>{
+        const td=document.createElement("td");td.textContent=String(value);tr.appendChild(td);
+      });body.appendChild(tr);
     });
-    setText("results-note","Color-swap and absent-color percentages use trials with a correct letter response as their denominator. Practice and interrupted attempts are excluded. Distances are relative screen positions, not calibrated visual angles.");
-    const warnings=rows.filter(r=>r.trial_status==="complete"&&r.timing_warning).length;
-    if(warnings) $("results-note").append(document.createTextNode(" "+warnings+" completed trial(s) have a timing warning; the exported data retain these flags."));
+    setText("results-digit-summary","Center task: "+digitScoreText(s.digit_hits,s.zero_targets,s.digit_hit_rate)+"; "+s.digit_false_alarms+" extra Space press"+(s.digit_false_alarms===1?"":"es")+".");
+    setText("results-staircase-summary","Distance was held constant within each set of "+C.ADJUST_EVERY+" trials and adjusted between sets. Average accuracy includes unanswered trials as not correct; average distance uses the target’s distance from fixation on all finished trials.");
+    setText("results-note","Percentages use the "+s.n+" answered trials. Unanswered trials are excluded from the six response categories; their digit responses are included in the center-task summary. Interrupted attempts are excluded. This short demonstration illustrates response patterns; it does not provide a precise binding or distance-threshold estimate.");
+    const warnings=rows.filter(r=>["complete","timeout"].includes(r.trial_status)&&r.timing_warning).length;
+    if(warnings) $("results-note").append(document.createTextNode(" "+warnings+" finished trial(s) have a timing warning; the exported data retain these flags."));
     session.stage="results";persist();flushAtBreak($("restart-button"));
   }
   function interrupt(reason,message) {
-    if(!attempt || !["fixation","stream","grace","color","letter"].includes(phaseState)) return;
+    if(!attempt && phaseState==="feedback") {
+      cancelAnimationFrame(frameHandle);runToken++;phaseState="paused_feedback";persist();
+      $("pause-overlay").hidden=false;setText("pause-reason","The demonstration paused between sets. Continue when you are ready.");
+      $("main-content").inert=true;$("resume-trial-button").focus();return;
+    }
+    if(!attempt || !["fixation","stream","grace","report"].includes(phaseState)) return;
     cancelAnimationFrame(frameHandle);runToken++;
     finalizeMetrics();
     attempt.row.trial_status="interrupted";attempt.row.interruption_reason=reason;
@@ -1648,7 +1777,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function compatibleSession() {
     const saved=session.config_snapshot;
     const keys=["TASK_VERSION","MAIN_BLOCKS","FIXATION_MS","STREAM_MS","DIGIT_COUNT",
-      "PERIPHERAL_ONSET_DIGIT","PERIPHERAL_DIGITS","RESPONSE_WINDOW_MS","GRACE_MS",
+      "PERIPHERAL_ONSET_DIGIT","PERIPHERAL_DIGITS","RESPONSE_WINDOW_MS","GRACE_MS","REPORT_TIMEOUT_MS",
+      "MAIN_TRIALS","DISTANCE_START","DISTANCE_MIN","DISTANCE_MAX","DISTANCE_STEP","ADJUST_EVERY","ADJUST_PAUSE_MS",
       "FRAME_WARNING_MS","FRAME_ABORT_MS","COLORS"];
     return saved && sameCollector() && keys.every(key=>JSON.stringify(saved[key])===JSON.stringify(C[key]));
   }
@@ -1665,11 +1795,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     }
     recoverPending("page_reload");
     if(session.stage==="results" || session.phase==="main"&&session.cursor>=plans().length) {results();return;}
-    if(session.stage==="practice_feedback") {
-      phaseState="feedback";practiceFeedback(session.trials.filter(r=>r.trial_status==="complete").slice(-1)[0]);return;
-    }
-    if(session.stage==="block_break") {phaseState="break";blockBreak();return;}
-    if(session.phase==="practice"&&session.cursor>=plans().length) {phaseState="feedback";nextPractice();return;}
+    if(session.stage==="adjustment_feedback") {phaseState="paused_feedback";begin();return;}
     ready("Your completed trials have been restored. Any unfinished trial will be repeated.");
   }
   function download(name,text,type) {
@@ -1688,19 +1814,20 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       protocol:"ic-demo-v1",active_session:session,archived_sessions:load(archiveKey,[]),pending_batches:client.pendingRecords()},null,2),"application/json;charset=utf-8");
   }
   function returnToWelcome() {
+    cancelAnimationFrame(frameHandle);runToken++;
     archiveCurrent();session=null;attempt=null;phaseState="welcome";
     try {localStorage.removeItem(activeKey);} catch (_) {}
-    $("participant-code").value="";$("resume-panel").hidden=true;
-    show("welcome-screen");setText("trial-progress","");$("progress-fill").style.width="0%";
+    ["first-name","last-name","student-id"].forEach(id=>$(id).value="");$("resume-panel").hidden=true;
+    show("welcome-screen");$("progress-fill").style.width="0%";
     $("recovered-data-panel").hidden=client.pendingCount()===0;
     renderSaveStatus();
   }
   document.addEventListener("keydown",event=>{
-    if(phaseState==="paused" && event.key==="Tab") {
+    if(["paused","paused_feedback"].includes(phaseState) && event.key==="Tab") {
       event.preventDefault();$("resume-trial-button").focus();return;
     }
     if(event.code==="Space") {
-      if(["fixation","stream","grace","color","letter"].includes(phaseState)) event.preventDefault();
+      if(["fixation","stream","grace","report"].includes(phaseState)) event.preventDefault();
       if(event.repeat||spaceHeld) return;spaceHeld=true;
       if(attempt&&["stream","grace"].includes(phaseState)&&!event.ctrlKey&&!event.altKey&&!event.metaKey) {
         attempt.presses.push(round(performance.now()-attempt.streamStart));
@@ -1708,8 +1835,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       return;
     }
     if(event.repeat||event.ctrlKey||event.altKey||event.metaKey) return;
-    if(phaseState==="color"&&colorKeys[event.key]) {event.preventDefault();reportColor(colorKeys[event.key]);}
-    else if(phaseState==="letter"&&["T","X","L"].includes(event.key.toUpperCase())) {event.preventDefault();reportLetter(event.key.toUpperCase());}
+    if(phaseState==="report"&&/^[1-9]$/.test(event.key)) {
+      event.preventDefault();const choice=reportChoices[Number(event.key)-1];reportChoice(choice.color,choice.letter);
+    }
   });
   document.addEventListener("keyup",event=>{if(event.code==="Space")spaceHeld=false;});
   document.addEventListener("visibilitychange",()=>{if(document.hidden){spaceHeld=false;interrupt("tab_hidden","The tab was hidden. Return to the task to repeat this trial.");}});
@@ -1723,21 +1851,18 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   $("start-button").addEventListener("click",newSession);
   $("instruction-start-button").addEventListener("click",()=>ready());
   $("begin-trial-button").addEventListener("click",begin);
-  $("next-practice-button").addEventListener("click",nextPractice);
-  $("continue-button").addEventListener("click",begin);
   $("resume-trial-button").addEventListener("click",()=>{if(deviceOK())begin();else setText("pause-reason","Please enlarge the window to at least "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels before continuing.");});
   $("resume-button").addEventListener("click",resumeStored);
   $("discard-session-button").addEventListener("click",returnToWelcome);
   $("restart-button").addEventListener("click",returnToWelcome);
-  document.querySelectorAll("[data-color]").forEach(b=>b.addEventListener("click",()=>reportColor(b.dataset.color)));
-  document.querySelectorAll("[data-letter]").forEach(b=>b.addEventListener("click",()=>reportLetter(b.dataset.letter)));
+  document.querySelectorAll("[data-choice]").forEach(b=>b.addEventListener("click",()=>reportChoice(b.dataset.color,b.dataset.letter)));
   $("download-trials-button").addEventListener("click",()=>downloadCSV("trials"));
   $("download-blocks-button").addEventListener("click",()=>downloadCSV("blocks"));
   $("download-json-button").addEventListener("click",downloadJSON);
   $("download-pending-button").addEventListener("click",downloadJSON);
   $("retry-save-button").addEventListener("click",()=>flushAtBreak($("retry-save-button")));
   $("retry-pending-button").addEventListener("click",()=>flushAtBreak($("retry-pending-button")));
-  $("class-code").value=C.CLASS_CODE||"";
+  $("section-id").value=C.CLASS_CODE||"";
   uiReady=true;
   session=load(activeKey,null);
   if(session && (!session.schedule || !Array.isArray(session.trials) || !Array.isArray(session.queued_trial_ids))) session=null;
@@ -1753,10 +1878,11 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     setText("setup-notice","Preview mode: class collection is not connected yet. You can try the complete task and download your responses from this device.");
     $("start-button").textContent="Try the demo";
   }
-  setText("main-block-count",mainBlocks+" short block"+(mainBlocks===1?"":"s"));
-  setText("session-duration",mainBlocks===3?"5–7 min":mainBlocks===2?"4–6 min":"3–4 min");
-  setText("trial-count-copy","Begin with 6 practice trials and feedback, followed by "+(mainBlocks*12)+" main trials in "+mainBlocks+" block"+(mainBlocks===1?"":"s")+".");
-  setText("trial-progress","6 practice · "+(mainBlocks*12)+" main trials");
+  setText("practice-count",countSchedule.main.length+" total trials");
+  setText("main-block-count","Every "+C.ADJUST_EVERY+" trials");
+  setText("session-duration",durationEstimate(countSchedule));
+  setText("trial-count-copy",mainTaskDescription(countSchedule)+". Each report has a 1.5-second limit. There are no extra practice trials. A one-second feedback pause separates each set.");
+  setText("trial-progress",countSchedule.main.length+" total trials");
   updateDeviceWarning();renderSaveStatus();
 })();
   </script>

@@ -1,0 +1,1764 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f4ee">
+  <meta name="description" content="A classroom experiment in visual attention and feature binding.">
+  <title>Illusory conjunctions · A perception experiment</title>
+  <!-- SETUP: Paste your deployed Google Apps Script /exec URL into
+       GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
+       The existing Code.gs collector stays in your Google Sheet's Apps Script. -->
+  <script id="task-settings">
+/* Edit the two settings below before collecting class data. No account token is needed. */
+window.IC_CONFIG = Object.freeze({
+  GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
+  CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
+  TASK_VERSION: "1.0.0",
+  MAIN_BLOCKS: 3,         // 1, 2, or 3 blocks of 12; 3 gives the fully balanced 36-trial demo.
+  OFFER_FULLSCREEN: true,
+  STORAGE_PREFIX: "illusory-conjunction-v1",
+  MIN_WIDTH: 900,
+  MIN_HEIGHT: 650,
+  FIXATION_MS: 750,
+  STREAM_MS: 5000,
+  DIGIT_COUNT: 30,
+  PERIPHERAL_ONSET_DIGIT: 20, // One-based; the original procedure begins with the 20th digit.
+  PERIPHERAL_DIGITS: 9,       // Nine digit intervals = 1500 ms.
+  RESPONSE_WINDOW_MS: 500,
+  GRACE_MS: 500,             // Preserves the response window for a zero in the final position.
+  FRAME_WARNING_MS: 50,
+  FRAME_ABORT_MS: 150,
+  COLORS: Object.freeze({red: "#ff5252", green: "#35d07f", blue: "#5d9dff"})
+});
+  </script>
+  <style id="task-styles">
+:root {
+  --paper: #f6f4ee;
+  --surface: #fffefa;
+  --ink: #182b3c;
+  --muted: #617078;
+  --teal: #196d67;
+  --teal-dark: #12554f;
+  --teal-pale: #e7f0eb;
+  --orange: #c9703b;
+  --line: #dedfd6;
+  --stage-height: 460px;
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+button, input { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+button, a, input { touch-action: manipulation; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 3px solid #c9703b; outline-offset: 4px; }
+a { color: var(--teal); text-underline-offset: 4px; text-decoration-thickness: 1px; }
+a:hover { color: var(--teal-dark); }
+h1, h2, p, figure, dl { margin: 0; }
+h1 { font-size: clamp(28px, 3.5vw, 40px); line-height: 1.14; letter-spacing: -1.2px; font-weight: 650; }
+h2 { font-size: 21px; line-height: 1.3; letter-spacing: -.45px; font-weight: 650; }
+p { line-height: 1.6; }
+strong { font-weight: 650; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+.experiment-active .stimulus-stage, .experiment-active #stimulus-canvas { cursor: none; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 25px; min-height: 25px; padding: 1px 7px; border: 1px solid #ccd1cc; border-bottom-width: 2px; border-radius: 5px; background: #fffefa; color: var(--ink); font: 600 12px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; z-index: 100; left: 16px; top: -80px; background: var(--surface); padding: 10px 16px; border: 1px solid var(--teal); border-radius: 6px; }
+.skip-link:focus { top: 12px; }
+
+.site-header { border-bottom: 1px solid var(--line); background: var(--paper); }
+.header-inner { width: min(1100px, calc(100% - 48px)); min-height: 82px; margin: 0 auto; display: grid; grid-template-columns: 1fr minmax(240px, 330px) 1fr; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; letter-spacing: -.4px; white-space: nowrap; }
+.brand-light { color: var(--muted); font-weight: 400; }
+.brand-mark { display: grid; grid-template-columns: repeat(2, 6px); gap: 3px; transform: rotate(-5deg); }
+.brand-mark i { height: 6px; width: 6px; border-radius: 1.5px; background: var(--teal); }
+.brand-mark i:nth-child(2) { background: var(--orange); }
+.brand-mark i:nth-child(3) { opacity: .35; }
+.brand-mark i:nth-child(4) { opacity: .65; }
+.progress-labels { display: flex; gap: 15px; justify-content: space-between; margin-bottom: 8px; font-size: 11px; line-height: 1.3; white-space: nowrap; }
+#phase-label { font-weight: 650; }
+#trial-progress { color: var(--muted); }
+.progress-track { overflow: hidden; height: 4px; background: #e0e4db; border-radius: 4px; }
+#progress-fill { width: 0%; height: 100%; background: var(--teal); border-radius: inherit; }
+.save-status { justify-self: end; display: flex; align-items: center; gap: 7px; max-width: 240px; font-size: 11px; line-height: 1.4; color: var(--muted); }
+.save-status::before { content: ""; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: #8d9b92; }
+.save-status[data-state="saved"]::before { background: var(--teal); }
+.save-status[data-state="saving"]::before, .save-status[data-state="pending"]::before { background: var(--orange); }
+.save-status[data-state="error"]::before { background: #b4413b; }
+.main-content { width: min(1100px, calc(100% - 48px)); margin: 0 auto; padding: 36px 0 40px; min-height: calc(100vh - 155px); }
+.screen { width: 100%; }
+.eyebrow { font-size: 10px; line-height: 1.5; text-transform: uppercase; letter-spacing: 1.8px; color: var(--teal); font-weight: 750; }
+.muted { color: var(--muted); font-size: 14px; }
+.button { min-height: 45px; display: inline-flex; justify-content: center; align-items: center; gap: 14px; padding: 11px 19px; border: 1px solid transparent; border-radius: 7px; font-size: 13px; line-height: 1.5; font-weight: 650; text-decoration: none; transition: background .12s ease, border-color .12s ease; }
+.button-primary { color: white; background: var(--teal); border-color: var(--teal); }
+.button-primary:hover:not(:disabled) { background: var(--teal-dark); border-color: var(--teal-dark); }
+.button-secondary { color: var(--ink); background: var(--surface); border-color: #cdd4ca; }
+.button-secondary:hover:not(:disabled) { background: #edf0e8; border-color: #9bafa5; }
+.button-text { background: transparent; color: var(--teal); padding-left: 6px; padding-right: 6px; }
+.button-text:hover:not(:disabled) { background: var(--teal-pale); }
+.button-full { width: 100%; }
+.button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.notice { padding: 12px 15px; border-radius: 7px; font-size: 12px; line-height: 1.55; }
+.notice strong { display: block; }
+.notice-quiet { color: #566a66; background: #eff2eb; }
+.notice-warning { background: #fff2df; border: 1px solid #eac694; color: #765018; }
+.device-warning { margin-bottom: 24px; }
+
+.welcome-screen { padding-top: 24px; }
+.welcome-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 80px; align-items: center; }
+.welcome-intro { padding-bottom: 14px; }
+.welcome-intro h1 { margin: 19px 0 23px; font-size: clamp(44px, 5.6vw, 65px); line-height: 1.04; letter-spacing: -2.5px; }
+.intro-copy { max-width: 410px; font-size: 20px; line-height: 1.5; letter-spacing: -.25px; }
+.intro-description { max-width: 380px; margin-top: 17px; color: var(--muted); font-size: 14px; }
+.session-facts { display: grid; grid-template-columns: auto auto auto; gap: 22px; max-width: 420px; margin-top: 35px; padding-top: 22px; border-top: 1px solid var(--line); }
+.session-facts dt { color: var(--muted); font-size: 11px; line-height: 1.5; margin-bottom: 5px; }
+.session-facts dd { margin: 0; font-size: 14px; font-weight: 650; }
+.equipment-note { display: flex; align-items: center; gap: 8px; margin-top: 25px; color: var(--muted); font-size: 11px; }
+.equipment-note span { font-size: 18px; }
+.entry-card { padding: 31px 33px 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; box-shadow: 0 9px 35px rgba(37, 58, 44, .035); }
+.entry-card h2 { margin: 9px 0 10px; font-size: 25px; }
+.entry-card > .muted { margin-bottom: 25px; font-size: 13px; }
+.field { margin-bottom: 18px; }
+.field label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 650; }
+.field input { display: block; width: 100%; height: 44px; padding: 10px 12px; border: 1px solid #cdd4ca; border-radius: 6px; background: #fffefa; color: var(--ink); font-size: 14px; }
+.field input::placeholder { color: #64756c; font-size: 13px; }
+.field input:hover { border-color: #9cafa5; }
+.field input:focus { border-color: var(--teal); }
+.field-hint { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.setup-notice { margin-top: 16px; }
+.recovery-panel { margin-top: 23px; padding: 22px 25px; border: 1px solid #b6cbc0; background: #edf3ed; border-radius: 9px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px 25px; }
+.recovery-panel h2 { font-size: 17px; margin-bottom: 5px; }
+.recovery-panel p { font-size: 12px; color: var(--muted); }
+.recovery-panel .field-hint { flex: 1 1 100%; margin: 0; }
+
+.section-heading { margin-bottom: 25px; max-width: 830px; }
+.section-heading h1 { margin: 9px 0 12px; }
+.section-heading > p:not(.eyebrow) { font-size: 14px; color: var(--muted); }
+.instructions-screen .section-heading h1 { font-size: 31px; }
+.instruction-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.instruction-card { position: relative; padding: 22px 24px 20px 61px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.step-number { position: absolute; left: 21px; top: 24px; color: #a75225; font-size: 12px; font-weight: 750; }
+.instruction-card h2 { margin-bottom: 10px; font-size: 18px; }
+.instruction-card p { font-size: 13px; color: #4e626b; }
+.instruction-card .instruction-emphasis { margin-top: 10px; color: var(--teal); font-size: 12px; font-weight: 600; }
+.example-figure { margin: 22px 0 21px; }
+.example-stage { position: relative; height: 148px; background: #050608; border-radius: 8px; overflow: hidden; }
+.example-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: #fff; font-family: Arial, sans-serif; font-size: 24px; line-height: 1; }
+.example-string { display: flex; position: absolute; left: 67%; top: 27%; gap: 11px; font-family: Arial, sans-serif; font-size: 32px; line-height: 1; }
+.example-white { color: #fff; }
+.example-red { color: #ff5252; }
+.example-green { color: #35d07f; }
+.example-caption { position: absolute; left: 18px; bottom: 13px; color: #a1abae; font-size: 10px; }
+.example-figure figcaption { margin-top: 10px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.6; }
+.example-figure kbd { min-height: 21px; font-size: 10px; }
+.key-guide { display: flex; justify-content: space-between; gap: 20px; padding: 17px 0 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.key-guide > div { display: grid; align-content: start; gap: 9px; font-size: 12px; }
+.key-guide-label { color: var(--muted); font-size: 10px; }
+.key-gap { display: inline-block; width: 7px; }
+.instruction-bottom { margin-top: 22px; display: flex; justify-content: space-between; gap: 22px; align-items: center; }
+.instruction-bottom p { font-size: 12px; }
+.instruction-bottom .button { flex-shrink: 0; }
+
+.centered-screen { min-height: 480px; display: flex; justify-content: center; align-items: center; padding: 34px 0; }
+.focus-card, .report-card { width: min(640px, 100%); text-align: center; }
+.focus-card .eyebrow { margin-bottom: 14px; }
+.focus-card h1 { font-size: 32px; }
+.focus-copy { color: var(--muted); font-size: 15px; line-height: 1.65; max-width: 500px; margin: 16px auto 28px; }
+.focus-symbol { display: flex; justify-content: center; align-items: center; width: 60px; height: 60px; margin: 10px auto 23px; border-radius: 50%; background: var(--teal-pale); color: var(--teal); font-size: 32px; font-weight: 300; }
+.focus-card > .field-hint { margin-top: 15px; }
+.task-screen { padding: 0; }
+.task-heading { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 13px; }
+.task-heading h1 { font-size: 16px; line-height: 1.4; letter-spacing: -.2px; font-weight: 600; }
+.task-key-reminder { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.task-key-reminder kbd { margin-right: 5px; }
+.stimulus-stage { width: 100%; height: var(--stage-height); overflow: hidden; background: #050608; border-radius: 7px; }
+#stimulus-canvas { display: block; width: 100%; height: var(--stage-height); background: #050608; touch-action: none; }
+.task-note { min-height: 24px; margin-top: 12px; text-align: center; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.report-card { width: min(700px, 100%); }
+.report-card .eyebrow { margin-bottom: 14px; }
+.report-card h1 { font-size: 32px; }
+.report-card .focus-copy { margin-bottom: 30px; }
+.report-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.report-button { min-height: 160px; background: var(--surface); border: 1px solid #cdd4ca; border-radius: 11px; color: var(--ink); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 11px; }
+.report-button:hover:not(:disabled) { border-color: var(--teal); background: #edf3ed; }
+.report-button:active:not(:disabled) { background: #e2eee5; }
+.color-swatch { width: 35px; height: 35px; border-radius: 50%; }
+.swatch-red { background: #ff5252; }
+.swatch-green { background: #35d07f; }
+.swatch-blue { background: #5d9dff; }
+.choice-label { font-size: 16px; font-weight: 650; }
+.report-button kbd { background: transparent; }
+.letter-glyph { font-family: Arial, sans-serif; font-size: 46px; line-height: 1; font-weight: 500; }
+.letter-choice-label { margin-top: 7px; font-size: 11px; color: var(--muted); }
+.feedback-detail, .break-summary { margin: 0 auto 28px; max-width: 530px; border-radius: 8px; background: #eaf0e8; color: #3d5e55; padding: 17px 20px; font-size: 13px; line-height: 1.7; white-space: pre-line; }
+.feedback-detail:empty, .break-summary:empty { display: none; }
+.break-mark { display: flex; justify-content: center; align-items: center; gap: 7px; width: 58px; height: 58px; margin: 12px auto 23px; border-radius: 50%; background: var(--teal-pale); }
+.break-mark span { width: 5px; height: 21px; background: var(--teal); border-radius: 1px; }
+
+.results-screen { padding-top: 12px; }
+.results-heading { margin-bottom: 30px; }
+.results-heading h1 { font-size: 42px; }
+.results-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.results-table { width: 100%; min-width: 700px; border-collapse: collapse; font-size: 13px; text-align: right; }
+.results-table thead { background: #eaf0e8; }
+.results-table th { padding: 16px 18px; color: #426054; font-size: 11px; font-weight: 650; line-height: 1.4; }
+.results-table td { padding: 21px 18px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.results-table th:first-child, .results-table td:first-child { text-align: left; }
+.results-table td:first-child { font-weight: 650; text-transform: capitalize; }
+.results-note { max-width: 870px; margin: 14px 0 28px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.results-save-card { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 23px 25px; background: #eaf0e8; border: 1px solid #d5e1d4; border-radius: 10px; }
+.results-save-card h2 { font-size: 18px; margin-bottom: 7px; }
+.results-save-card p { max-width: 740px; color: #4b655a; font-size: 12px; }
+.results-save-card .button { flex-shrink: 0; }
+.download-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 21px; }
+.results-bottom { margin-top: 26px; padding-top: 19px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.results-bottom .muted { font-size: 12px; }
+.site-footer { width: min(1100px, calc(100% - 48px)); margin: 0 auto; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; padding: 20px 0 23px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.site-footer a { color: var(--muted); }
+.site-footer a:hover { color: var(--teal); }
+.pause-overlay { position: fixed; z-index: 50; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(16, 32, 40, .74); }
+.pause-card { width: min(480px, 100%); padding: 35px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: 0 16px 70px rgba(0, 0, 0, .2); text-align: center; }
+.pause-card h1 { margin: 12px 0 17px; font-size: 28px; }
+.pause-card > p:not(.eyebrow) { margin-bottom: 25px; color: var(--muted); font-size: 14px; }
+.noscript-notice { position: fixed; inset: auto 20px 20px; z-index: 100; padding: 20px; background: #fff2df; color: #765018; border: 1px solid #eac694; border-radius: 8px; }
+
+@media (min-width: 900px) and (max-height: 740px) {
+  :root { --stage-height: 400px; }
+  .header-inner { min-height: 68px; }
+  .main-content { padding-top: 23px; padding-bottom: 26px; min-height: calc(100vh - 135px); }
+  .welcome-screen { padding-top: 9px; }
+  .welcome-intro h1 { font-size: 53px; }
+  .entry-card { padding: 24px 29px; }
+  .session-facts { margin-top: 26px; }
+  .equipment-note { margin-top: 18px; }
+  .centered-screen { min-height: 430px; }
+  .site-footer { padding-top: 15px; padding-bottom: 17px; }
+}
+
+@media (max-width: 1050px) {
+  .welcome-grid { gap: 42px; }
+  .header-inner { gap: 20px; grid-template-columns: 1fr minmax(230px, 280px) 1fr; }
+  .entry-card { padding-left: 26px; padding-right: 26px; }
+  .instruction-card { padding-right: 19px; }
+  .key-guide { gap: 15px; }
+  .key-gap { width: 3px; }
+}
+
+@media (max-width: 899px) {
+  .header-inner { min-height: 92px; grid-template-columns: 1fr auto; gap: 9px 20px; padding: 15px 0; }
+  .session-progress { grid-column: 1 / -1; grid-row: 2; }
+  .save-status { grid-column: 2; grid-row: 1; max-width: 200px; }
+  .brand { font-size: 16px; }
+  .main-content { padding-top: 26px; min-height: calc(100vh - 170px); }
+  .welcome-screen { padding-top: 0; }
+  .welcome-grid { grid-template-columns: 1fr; gap: 30px; }
+  .welcome-intro h1 { font-size: 46px; }
+  .welcome-intro h1 br { display: none; }
+  .intro-copy, .intro-description { max-width: 650px; }
+  .session-facts { max-width: 500px; }
+  .equipment-note { margin-top: 18px; }
+  .entry-card { max-width: 650px; width: 100%; }
+  .instruction-grid { grid-template-columns: 1fr; gap: 14px; }
+  .key-guide { flex-wrap: wrap; gap: 20px 35px; }
+  .instruction-bottom { align-items: flex-start; }
+  .instructions-screen .section-heading h1 { font-size: 29px; }
+  .example-string { left: 66%; gap: 8px; font-size: 29px; }
+  .centered-screen { min-height: 450px; }
+  .site-footer { flex-wrap: wrap; gap: 5px; }
+}
+
+@media (max-width: 560px) {
+  .header-inner, .main-content, .site-footer { width: calc(100% - 32px); }
+  .header-inner { gap: 10px 12px; }
+  .save-status { max-width: 135px; font-size: 10px; }
+  .welcome-intro h1 { font-size: 39px; letter-spacing: -1.6px; }
+  .welcome-intro .intro-copy { font-size: 18px; }
+  .session-facts { gap: 14px; }
+  .session-facts dd { font-size: 13px; }
+  .entry-card { padding: 24px 22px; }
+  .instruction-card { padding-left: 51px; }
+  .step-number { left: 17px; }
+  .example-stage { height: 155px; }
+  .example-string { left: 61%; top: 23%; gap: 5px; font-size: 23px; }
+  .instruction-bottom, .results-save-card, .results-bottom { flex-direction: column; align-items: stretch; }
+  .instruction-bottom .button { align-self: flex-start; }
+  .centered-screen { min-height: 410px; padding: 20px 0; }
+  .focus-card h1, .report-card h1 { font-size: 27px; }
+  .focus-copy { font-size: 14px; }
+  .report-options { gap: 9px; }
+  .report-button { min-height: 142px; gap: 10px; }
+  .color-swatch { width: 29px; height: 29px; }
+  .letter-glyph { font-size: 39px; }
+  .task-key-reminder { display: none; }
+  .results-heading h1 { font-size: 35px; }
+  .download-actions .button { width: 100%; }
+  .pause-card { padding: 27px 23px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+}
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to the experiment</a>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand" aria-label="Perception lab">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span>Perception<span class="brand-light"> / lab</span></span>
+      </div>
+      <div class="session-progress">
+        <div class="progress-labels">
+          <span id="phase-label">Welcome</span>
+          <span id="trial-progress">6 practice · 36 main trials</span>
+        </div>
+        <div class="progress-track" aria-hidden="true"><div id="progress-fill"></div></div>
+      </div>
+      <div id="save-status" class="save-status" role="status" aria-live="polite" data-state="local">Local preview</div>
+    </div>
+  </header>
+
+  <main id="main-content" class="main-content">
+    <div id="device-warning" class="notice notice-warning device-warning" role="alert" hidden>
+      <strong>A computer and keyboard are needed.</strong>
+      Please use a laptop or desktop with a browser window at least 900 × 650 pixels. Enlarge the window before starting.
+    </div>
+
+    <section id="welcome-screen" class="screen welcome-screen" aria-labelledby="welcome-title" tabindex="-1">
+      <div class="welcome-grid">
+        <div class="welcome-intro">
+          <p class="eyebrow">Attention &amp; feature binding</p>
+          <h1 id="welcome-title">Illusory<br>conjunctions</h1>
+          <p class="intro-copy">Watch the center. Catch the zeros. Then tell us what you saw at the edge.</p>
+          <p class="intro-description">This short experiment explores how we combine a letter and its color when our attention is occupied.</p>
+          <dl class="session-facts">
+            <div><dt>Duration</dt><dd id="session-duration">5–7 min</dd></div>
+            <div><dt>Practice</dt><dd id="practice-count">6 trials</dd></div>
+            <div><dt>Main task</dt><dd id="main-block-count">3 short blocks</dd></div>
+          </dl>
+          <p class="equipment-note"><span aria-hidden="true">⌨</span> Laptop or desktop · Physical keyboard</p>
+        </div>
+
+        <div class="entry-card">
+          <p class="eyebrow">Your session</p>
+          <h2>Before you begin</h2>
+          <p class="muted">Find a comfortable position and keep the screen at a steady viewing distance.</p>
+          <div class="field">
+            <label for="participant-code">Participant code</label>
+            <input id="participant-code" name="participant-code" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="participant-code-hint" placeholder="e.g., P014">
+            <p id="participant-code-hint" class="field-hint">Use your assigned code, or leave blank for an automatic code. Do not enter your name.</p>
+          </div>
+          <div class="field">
+            <label for="class-code">Class code</label>
+            <input id="class-code" name="class-code" type="text" maxlength="40" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="class-code-hint" placeholder="Code from your instructor">
+            <p id="class-code-hint" class="field-hint">Use your instructor’s class code. For an individual preview, you may leave this blank.</p>
+          </div>
+          <button id="start-button" type="button" class="button button-primary button-full">Read the instructions <span aria-hidden="true">→</span></button>
+          <div id="setup-notice" class="notice notice-quiet setup-notice" role="status" hidden>Local preview: you can download your results from this device. Class collection is not connected.</div>
+        </div>
+      </div>
+
+      <div id="resume-panel" class="recovery-panel" hidden>
+        <div><h2>Continue your session</h2><p>A session is available on this device.</p></div>
+        <div class="button-row"><button id="resume-button" type="button" class="button button-primary">Continue session</button><button id="discard-session-button" type="button" class="button button-secondary">Start a new session</button></div>
+        <p class="field-hint">Starting a new session keeps the previous data available for export.</p>
+      </div>
+
+      <div id="recovered-data-panel" class="recovery-panel" hidden>
+        <div><h2>Results waiting to be saved</h2><p>This device has results that have not yet been confirmed by the class collection service.</p></div>
+        <div class="button-row"><button id="retry-pending-button" type="button" class="button button-secondary">Retry saving</button><button id="download-pending-button" type="button" class="button button-text">Download local backup</button></div>
+      </div>
+    </section>
+
+    <section id="instructions-screen" class="screen instructions-screen" aria-labelledby="instructions-title" tabindex="-1" hidden>
+      <div class="section-heading">
+        <p class="eyebrow">How to take part</p>
+        <h1 id="instructions-title">Two tasks. Keep your eyes at the center.</h1>
+        <p>The center task comes first. A brief string of letters will also appear above or below, on either side.</p>
+      </div>
+
+      <div class="instruction-grid">
+        <article class="instruction-card">
+          <span class="step-number" aria-hidden="true">01</span>
+          <h2>Catch every zero</h2>
+          <p>Watch the stream of digits at the center. Press <kbd>Space</kbd> whenever you see <strong>0</strong>. Do not respond to the other digits.</p>
+          <p class="instruction-emphasis">Keep looking at the center throughout the display.</p>
+        </article>
+        <article class="instruction-card">
+          <span class="step-number" aria-hidden="true">02</span>
+          <h2>Report the peripheral target</h2>
+          <p>After the digits finish, report the target’s <strong>color first</strong>, then its <strong>letter</strong>. The target is always <strong>T, X, or L</strong>; the other characters are O.</p>
+          <p class="instruction-emphasis">If you are unsure, give your best answer.</p>
+        </article>
+      </div>
+
+      <figure class="example-figure">
+        <div class="example-stage" role="img" aria-label="An example display: a white zero at the center, and O T O O above and to the right. The first and last O are white. The T is red, and the middle O is green.">
+          <span class="example-center" aria-hidden="true">0</span>
+          <span class="example-string" aria-hidden="true"><span class="example-white">O</span><span class="example-red">T</span><span class="example-green">O</span><span class="example-white">O</span></span>
+          <span class="example-caption" aria-hidden="true">Example display</span>
+        </div>
+        <figcaption>Here, press <kbd>Space</kbd> for the central 0. After the display, report <strong>red</strong>, then <strong>T</strong>.</figcaption>
+      </figure>
+
+      <div class="key-guide" aria-label="Response keys">
+        <div><span class="key-guide-label">During the display</span><span><kbd>Space</kbd> for 0</span></div>
+        <div><span class="key-guide-label">Color report</span><span><kbd>1</kbd> Red <span class="key-gap"></span><kbd>2</kbd> Green <span class="key-gap"></span><kbd>3</kbd> Blue</span></div>
+        <div><span class="key-guide-label">Letter report</span><span><kbd>T</kbd> <kbd>X</kbd> <kbd>L</kbd></span></div>
+      </div>
+      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">Begin with 6 practice trials and feedback, followed by 36 main trials in 3 blocks.</p><button id="instruction-start-button" type="button" class="button button-primary">Start practice <span aria-hidden="true">→</span></button></div>
+    </section>
+
+    <section id="ready-screen" class="screen centered-screen" aria-labelledby="ready-title" tabindex="-1" hidden>
+      <div class="focus-card">
+        <p class="eyebrow">Ready when you are</p>
+        <div class="focus-symbol" aria-hidden="true">+</div>
+        <h1 id="ready-title">Let’s practice</h1>
+        <p id="ready-copy" class="focus-copy">Watch the center and press Space each time 0 appears. Then report the target’s color and letter.</p>
+        <button id="begin-trial-button" type="button" class="button button-primary">Begin trial <span aria-hidden="true">→</span></button>
+        <p class="field-hint">Place your thumb on the space bar.</p>
+      </div>
+    </section>
+
+    <section id="task-screen" class="screen task-screen" aria-labelledby="task-caption" tabindex="-1" hidden>
+      <div class="task-heading"><h1 id="task-caption">Keep your eyes at the center</h1><span class="task-key-reminder"><kbd>Space</kbd> when you see 0</span></div>
+      <div class="stimulus-stage"><canvas id="stimulus-canvas" width="1100" height="460" aria-label="Visual task display: watch the digits at the center and press Space for zero.">This experiment requires a browser that supports the HTML canvas.</canvas></div>
+      <p id="task-note" class="task-note">Keep looking at the center. Wait for the report screen before answering about the letters.</p>
+    </section>
+
+    <section id="report-screen" class="screen centered-screen" aria-labelledby="report-prompt" tabindex="-1" hidden>
+      <div class="report-card">
+        <p id="report-progress" class="eyebrow">Report 1 of 2 · Color</p>
+        <h1 id="report-prompt" tabindex="-1" aria-live="polite" aria-atomic="true">What color was the target?</h1>
+        <p id="report-hint" class="focus-copy">Report the color of the T, X, or L.</p>
+        <div id="color-options" class="report-options" role="group" aria-label="Choose the target color">
+          <button type="button" class="report-button color-choice" data-color="red"><span class="color-swatch swatch-red" aria-hidden="true"></span><span class="choice-label">Red</span><kbd>1</kbd></button>
+          <button type="button" class="report-button color-choice" data-color="green"><span class="color-swatch swatch-green" aria-hidden="true"></span><span class="choice-label">Green</span><kbd>2</kbd></button>
+          <button type="button" class="report-button color-choice" data-color="blue"><span class="color-swatch swatch-blue" aria-hidden="true"></span><span class="choice-label">Blue</span><kbd>3</kbd></button>
+        </div>
+        <div id="letter-options" class="report-options" role="group" aria-label="Choose the target letter" hidden>
+          <button type="button" class="report-button letter-choice" data-letter="T"><span class="letter-glyph" aria-hidden="true">T</span><span class="letter-choice-label">Press <kbd>T</kbd></span></button>
+          <button type="button" class="report-button letter-choice" data-letter="X"><span class="letter-glyph" aria-hidden="true">X</span><span class="letter-choice-label">Press <kbd>X</kbd></span></button>
+          <button type="button" class="report-button letter-choice" data-letter="L"><span class="letter-glyph" aria-hidden="true">L</span><span class="letter-choice-label">Press <kbd>L</kbd></span></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="feedback-screen" class="screen centered-screen" aria-labelledby="feedback-title" tabindex="-1" hidden>
+      <div class="focus-card feedback-card">
+        <p class="eyebrow">Practice feedback</p>
+        <h1 id="feedback-title">Practice trial complete</h1>
+        <p id="feedback-copy" class="focus-copy"></p>
+        <div id="feedback-detail" class="feedback-detail"></div>
+        <button id="next-practice-button" type="button" class="button button-primary">Next practice trial <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section id="break-screen" class="screen centered-screen" aria-labelledby="break-title" tabindex="-1" hidden>
+      <div class="focus-card break-card">
+        <p class="eyebrow">A moment to pause</p>
+        <div class="break-mark" aria-hidden="true"><span></span><span></span></div>
+        <h1 id="break-title">Take a short break</h1>
+        <p id="break-copy" class="focus-copy">Rest your eyes. Continue when you are ready.</p>
+        <div id="break-summary" class="break-summary"></div>
+        <button id="continue-button" type="button" class="button button-primary">Continue <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section id="results-screen" class="screen results-screen" aria-labelledby="results-title" tabindex="-1" hidden>
+      <div class="section-heading results-heading">
+        <p class="eyebrow">Session complete</p>
+        <h1 id="results-title">Your results</h1>
+        <p id="results-summary">Here is a summary of your completed main trials.</p>
+      </div>
+      <div class="results-table-wrap">
+        <table class="results-table">
+          <caption class="sr-only">Main-trial results by distance from fixation</caption>
+          <thead><tr><th scope="col">Distance</th><th scope="col">Trials</th><th scope="col">Letter correct</th><th scope="col">Color swaps</th><th scope="col">Absent-color errors</th><th scope="col">Digit hit rate</th></tr></thead>
+          <tbody id="results-table-body"></tbody>
+        </table>
+      </div>
+      <p id="results-note" class="results-note">Only completed main trials are included in this summary.</p>
+      <div class="results-save-card">
+        <div><h2>Keep a copy</h2><p id="save-detail" role="status" aria-live="polite">You can download your session data below.</p></div>
+        <button id="retry-save-button" type="button" class="button button-secondary">Retry saving</button>
+      </div>
+      <div class="download-actions"><button id="download-trials-button" type="button" class="button button-primary">Download trial CSV</button><button id="download-blocks-button" type="button" class="button button-secondary">Download block CSV</button><button id="download-json-button" type="button" class="button button-secondary">Download JSON backup</button></div>
+      <div class="results-bottom"><p class="muted">Keep your participant code with your downloads.</p><button id="restart-button" type="button" class="button button-text">Start another session <span aria-hidden="true">→</span></button></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>A classroom demonstration of visual attention.</p>
+    <a href="https://ivrylab.berkeley.edu/files/organized_pubs_pdfs/1995_prinzmetal_w_henderson_d_.pdf" target="_blank" rel="noopener noreferrer">Method adapted from Prinzmetal, Henderson &amp; Ivry (1995)<span class="sr-only"> (PDF, opens in a new tab)</span><span aria-hidden="true"> ↗</span></a>
+  </footer>
+
+  <div id="pause-overlay" class="pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title" aria-describedby="pause-reason" hidden>
+    <div class="pause-card">
+      <p class="eyebrow">Trial paused</p>
+      <h1 id="pause-title">Let’s try that trial again</h1>
+      <p id="pause-reason">The display was interrupted. Return to the experiment, then restart this trial.</p>
+      <button id="resume-trial-button" type="button" class="button button-primary">Restart this trial <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+
+  <noscript><div class="noscript-notice">JavaScript is required for this experiment. Enable JavaScript in your browser and reload the page.</div></noscript>
+  <script id="task-core">
+(function (root, factory) {
+  "use strict";
+  var api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  else root.ICCore = api;
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
+
+  var COLORS = ["red", "green", "blue"];
+  var LETTERS = ["T", "X", "L"];
+  var DISTANCES = ["near", "middle", "far"];
+  var QUADRANTS = ["upper_left", "upper_right", "lower_left", "lower_right"];
+  var CATEGORIES = [
+    "correct", "conjunction_report", "color_feature_error",
+    "letter_feature_error", "letter_feature_conjunction_error",
+    "color_letter_feature_error"
+  ];
+
+  var TRIAL_HEADERS = Object.freeze((
+    "record_id,session_id,participant_id,class_code,task_version,phase,block,planned_trial,attempt,trial_status,interruption_reason,timestamp_utc,timestamp_local,timezone,utc_offset_minutes,distance,quadrant,target_position,target_letter,target_color,distractor_color,absent_color,response_color,response_letter,color_rt_ms,letter_rt_ms,letter_correct,color_correct,response_category,zero_targets,digit_hits,digit_misses,digit_false_alarms,digit_hit_rate,mean_digit_hit_rt_ms,stream_duration_planned_ms,stream_duration_actual_ms,digit_duration_ms,peripheral_onset_planned_ms,peripheral_onset_actual_ms,peripheral_duration_planned_ms,peripheral_duration_actual_ms,response_window_ms,grace_interval_ms,frame_count,estimated_dropped_frames,max_frame_gap_ms,timing_warning,skipped_digits,viewport_width,viewport_height,canvas_width,canvas_height,device_pixel_ratio,letter_font_px,target_x_px,target_y_px,distractor_x_px,distractor_y_px,eccentricity_px,fullscreen,session_seed,digit_seed,digits_json,digit_onsets_json,digit_presses_json,digit_press_results_json"
+  ).split(","));
+  var BLOCK_HEADERS = Object.freeze((
+    "record_id,session_id,participant_id,class_code,task_version,phase,block,distance,timestamp_utc,timestamp_local,timezone,utc_offset_minutes,planned_trials,completed_trials,interrupted_attempts,timing_warning_trials,correct,conjunction_report,color_feature_error,letter_feature_error,letter_feature_conjunction_error,color_letter_feature_error,letter_correct_n,swap_rate_given_letter_correct,absent_color_rate_given_letter_correct,zero_targets,digit_hits,digit_misses,digit_false_alarms,digit_hit_rate,session_seed"
+  ).split(","));
+
+  // Seeded pseudorandomness makes an interrupted session reproducible.
+  function rngFor(seed) {
+    var text = String(seed == null ? "ic-demo" : seed);
+    var hash = 1779033703 ^ text.length;
+    for (var i = 0; i < text.length; i += 1) {
+      hash = Math.imul(hash ^ text.charCodeAt(i), 3432918353);
+      hash = (hash << 13) | (hash >>> 19);
+    }
+    hash = Math.imul(hash ^ (hash >>> 16), 2246822507);
+    hash = Math.imul(hash ^ (hash >>> 13), 3266489909);
+    var state = (hash ^ (hash >>> 16)) >>> 0;
+    return function () {
+      state = (state + 0x6D2B79F5) >>> 0;
+      var value = state;
+      value = Math.imul(value ^ (value >>> 15), value | 1);
+      value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffled(values, random) {
+    var result = values.slice();
+    for (var i = result.length - 1; i > 0; i -= 1) {
+      var j = Math.floor(random() * (i + 1));
+      var temporary = result[i];
+      result[i] = result[j];
+      result[j] = temporary;
+    }
+    return result;
+  }
+
+  function colorPairs() {
+    var pairs = [];
+    COLORS.forEach(function (target) {
+      COLORS.forEach(function (distractor) {
+        if (target !== distractor) pairs.push([target, distractor]);
+      });
+    });
+    return pairs;
+  }
+
+  function plan(phase, block, distance, quadrant, letter, pair, position) {
+    return {
+      planned_trial: 0,
+      block: block,
+      phase: phase,
+      distance: distance,
+      quadrant: quadrant,
+      target_letter: letter,
+      target_color: pair[0],
+      distractor_color: pair[1],
+      absent_color: COLORS.filter(function (color) {
+        return color !== pair[0] && color !== pair[1];
+      })[0],
+      target_position: position
+    };
+  }
+
+  function createSchedule(seed) {
+    var random = rngFor(seed);
+    var blocks = [[], [], []];
+    DISTANCES.forEach(function (distance) {
+      var lettersByQuadrant = QUADRANTS.map(function () {
+        return shuffled(LETTERS, random);
+      });
+      var pairs = shuffled(colorPairs().concat(colorPairs()), random);
+      var positions = shuffled([
+        "left", "left", "left", "left", "left", "left",
+        "right", "right", "right", "right", "right", "right"
+      ], random);
+      for (var block = 0; block < 3; block += 1) {
+        QUADRANTS.forEach(function (quadrant, q) {
+          var index = block * 4 + q;
+          blocks[block].push(plan(
+            "main", block + 1, distance, quadrant,
+            lettersByQuadrant[q][block], pairs[index], positions[index]
+          ));
+        });
+      }
+    });
+    var main = [];
+    blocks.forEach(function (block) {
+      main = main.concat(shuffled(block, random));
+    });
+    main.forEach(function (trial, index) { trial.planned_trial = index + 1; });
+
+    var practiceLetters = shuffled(LETTERS.concat(LETTERS), random);
+    var practicePairs = shuffled(colorPairs(), random);
+    var practice = [];
+    DISTANCES.forEach(function (distance, d) {
+      var quadrants = shuffled(QUADRANTS, random);
+      var positions = shuffled(["left", "right"], random);
+      for (var i = 0; i < 2; i += 1) {
+        var index = d * 2 + i;
+        practice.push(plan(
+          "practice", 0, distance, quadrants[i],
+          practiceLetters[index], practicePairs[index], positions[i]
+        ));
+      }
+    });
+    practice = shuffled(practice, random);
+    practice.forEach(function (trial, index) { trial.planned_trial = index + 1; });
+    return { practice: practice, main: main };
+  }
+
+  function makeDigits(seed) {
+    var random = rngFor(seed);
+    // Reject whole streams, rather than adding zeros at selected positions.
+    for (var attempt = 0; attempt < 10000; attempt += 1) {
+      var digits = [];
+      var cooldown = 0;
+      var zeros = 0;
+      for (var i = 0; i < 30; i += 1) {
+        var digit;
+        if (cooldown > 0) {
+          digit = 1 + Math.floor(random() * 9);
+          cooldown -= 1;
+        } else {
+          digit = Math.floor(random() * 10);
+          if (digit === 0) {
+            zeros += 1;
+            cooldown = 2;
+          }
+        }
+        digits.push(digit);
+      }
+      if (zeros >= 2 && zeros <= 6) return digits;
+    }
+    throw new Error("Unable to generate a valid digit stream.");
+  }
+
+  function classify(targetLetter, targetColor, distractorColor, responseLetter, responseColor) {
+    if (LETTERS.indexOf(targetLetter) === -1 || COLORS.indexOf(targetColor) === -1 ||
+        COLORS.indexOf(distractorColor) === -1 || targetColor === distractorColor) {
+      throw new RangeError("Invalid target or distractor features.");
+    }
+    if (LETTERS.indexOf(responseLetter) === -1 || COLORS.indexOf(responseColor) === -1) {
+      return "incomplete";
+    }
+    if (responseLetter === targetLetter) {
+      if (responseColor === targetColor) return "correct";
+      if (responseColor === distractorColor) return "conjunction_report";
+      return "color_feature_error";
+    }
+    if (responseColor === targetColor) return "letter_feature_error";
+    if (responseColor === distractorColor) return "letter_feature_conjunction_error";
+    return "color_letter_feature_error";
+  }
+
+  function scoreDigits(digits, onsets, presses, windowMs) {
+    if (windowMs === undefined) windowMs = 500;
+    if (!Array.isArray(digits) || !Array.isArray(onsets) || !Array.isArray(presses) ||
+        digits.length !== onsets.length) {
+      throw new TypeError("Digits and onsets must be equally sized arrays; presses must be an array.");
+    }
+    if (!Number.isFinite(windowMs) || windowMs < 0) {
+      throw new RangeError("The response window must be a nonnegative finite number.");
+    }
+    var targets = [];
+    digits.forEach(function (digit, index) {
+      if (!Number.isInteger(digit) || digit < 0 || digit > 9) {
+        throw new TypeError("Digit streams must contain integers from zero through nine.");
+      }
+      var onset = onsets[index];
+      if (onset != null && (!Number.isFinite(onset) || onset < 0)) {
+        throw new TypeError("Onsets must be nonnegative finite numbers or null.");
+      }
+      if (digit === 0 && onset != null) targets.push({ index: index, onset: onset, hit: false });
+    });
+    targets.sort(function (a, b) { return a.onset - b.onset || a.index - b.index; });
+    var orderedPresses = presses.map(function (press, index) {
+      if (!Number.isFinite(press)) throw new TypeError("Press times must be finite numbers.");
+      return { time: press, index: index };
+    }).sort(function (a, b) { return a.time - b.time || a.index - b.index; });
+    var results = new Array(presses.length);
+    var hitRTs = [];
+    var falseAlarms = 0;
+    orderedPresses.forEach(function (press) {
+      var target = null;
+      for (var i = targets.length - 1; i >= 0; i -= 1) {
+        if (targets[i].onset <= press.time) {
+          target = targets[i];
+          break;
+        }
+      }
+      var rt = target ? press.time - target.onset : null;
+      var inWindow = target !== null && rt <= windowMs;
+      var hit = inWindow && !target.hit;
+      var reason = hit ? "matched" : (inWindow && target.hit ? "duplicate" : "outside_window");
+      if (hit) {
+        target.hit = true;
+        hitRTs.push(rt);
+      } else {
+        falseAlarms += 1;
+      }
+      results[press.index] = {
+        press_index: press.index,
+        press_ms: press.time,
+        outcome: hit ? "hit" : "false_alarm",
+        target_index: inWindow ? target.index : null,
+        rt_ms: inWindow ? rt : null,
+        reason: reason
+      };
+    });
+    var hits = hitRTs.length;
+    return {
+      targets: targets.length,
+      hits: hits,
+      misses: targets.length - hits,
+      false_alarms: falseAlarms,
+      hit_rate: targets.length ? hits / targets.length : null,
+      mean_hit_rt_ms: hits ? hitRTs.reduce(function (sum, rt) { return sum + rt; }, 0) / hits : null,
+      hit_rts_ms: hitRTs,
+      press_results: results
+    };
+  }
+
+  function geometry(width, height, distance, quadrant, targetPosition) {
+    if (!Number.isFinite(width) || !Number.isFinite(height) || width < 122 || height < 64) {
+      throw new RangeError("The canvas is too small for the fixed-size stimuli.");
+    }
+    if (DISTANCES.indexOf(distance) === -1 || QUADRANTS.indexOf(quadrant) === -1 ||
+        (targetPosition !== "left" && targetPosition !== "right")) {
+      throw new RangeError("Invalid distance, quadrant, or target position.");
+    }
+    var factors = { near: 0.17, middle: 0.27, far: 0.37 };
+    var centerX = width / 2;
+    var centerY = height / 2;
+    var xSign = quadrant.indexOf("left") !== -1 ? -1 : 1;
+    var ySign = quadrant.indexOf("upper") !== -1 ? -1 : 1;
+    // 45 px to the outer glyph center plus a conservative 16 px half-glyph.
+    var offsetX = Math.min(width * factors[distance], Math.max(0, width / 2 - 61));
+    var stringX = centerX + xSign * offsetX;
+    var stringY = centerY + ySign * height * 0.25;
+    var targetIndex = targetPosition === "left" ? 1 : 2;
+    var positions = [-45, -15, 15, 45].map(function (offset, index) {
+      return {
+        x: stringX + offset,
+        y: stringY,
+        role: index === 0 || index === 3 ? "flank" : (index === targetIndex ? "target" : "distractor")
+      };
+    });
+    var target = positions[targetIndex];
+    var distractor = positions[targetIndex === 1 ? 2 : 1];
+    return {
+      center_x: centerX,
+      center_y: centerY,
+      letter_font_px: 32,
+      digit_font_px: 24,
+      string_center_x: stringX,
+      string_center_y: stringY,
+      positions: positions,
+      target_x: target.x,
+      target_y: target.y,
+      distractor_x: distractor.x,
+      distractor_y: distractor.y,
+      // Actual target-center eccentricity, in CSS pixels, not visual degrees.
+      eccentricity_px: Math.hypot(target.x - centerX, target.y - centerY)
+    };
+  }
+
+  function truth(value) {
+    return value === true || value === 1 || value === "1" ||
+      (typeof value === "string" && value.toLowerCase() === "true");
+  }
+
+  function count(value) {
+    var number = typeof value === "number" ? value : Number(value);
+    return Number.isFinite(number) && number >= 0 ? number : 0;
+  }
+
+  function summarize(rows) {
+    if (!Array.isArray(rows)) throw new TypeError("Rows must be an array.");
+    var result = {
+      n: 0, letter_correct: null, color_correct: null,
+      conjunction_report: 0, color_feature_error: 0, letter_feature_error: 0,
+      letter_feature_conjunction_error: 0, color_letter_feature_error: 0,
+      correct: 0, letter_correct_n: 0,
+      swap_rate_given_letter_correct: null, absent_color_rate_given_letter_correct: null,
+      zero_targets: 0, digit_hits: 0, digit_misses: 0, digit_false_alarms: 0,
+      digit_hit_rate: null
+    };
+    var colorCorrect = 0;
+    rows.forEach(function (row) {
+      if (!row || row.trial_status !== "complete") return;
+      result.n += 1;
+      var category = row.response_category;
+      if (CATEGORIES.indexOf(category) !== -1) result[category] += 1;
+      var inferredLetter = category === "correct" || category === "conjunction_report" || category === "color_feature_error";
+      var inferredColor = category === "correct" || category === "letter_feature_error";
+      var letterCorrect = row.letter_correct == null ? inferredLetter : truth(row.letter_correct);
+      var thisColorCorrect = row.color_correct == null ? inferredColor : truth(row.color_correct);
+      if (letterCorrect) result.letter_correct_n += 1;
+      if (thisColorCorrect) colorCorrect += 1;
+      ["zero_targets", "digit_hits", "digit_misses", "digit_false_alarms"].forEach(function (key) {
+        result[key] += count(row[key]);
+      });
+    });
+    if (result.n) {
+      result.letter_correct = result.letter_correct_n / result.n;
+      result.color_correct = colorCorrect / result.n;
+    }
+    if (result.letter_correct_n) {
+      result.swap_rate_given_letter_correct = result.conjunction_report / result.letter_correct_n;
+      result.absent_color_rate_given_letter_correct = result.color_feature_error / result.letter_correct_n;
+    }
+    if (result.zero_targets) result.digit_hit_rate = result.digit_hits / result.zero_targets;
+    return result;
+  }
+
+  function csvCell(value) {
+    var text;
+    if (value == null) text = "";
+    else if (typeof value === "number") text = Number.isFinite(value) ? String(value) : "";
+    else if (typeof value === "object") text = JSON.stringify(value);
+    else text = String(value);
+    // Quoting alone does not neutralize formulas in spreadsheet applications.
+    if (typeof value !== "number" && typeof value !== "boolean" &&
+        /^[\s\u0000-\u001f\u007f-\u009f\u200b-\u200f]*[=+\-@]/.test(text)) {
+      text = "'" + text;
+    }
+    if (/[",\r\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+    return text;
+  }
+
+  function toCSV(rows, headers) {
+    if (!Array.isArray(rows) || !Array.isArray(headers)) {
+      throw new TypeError("Rows and headers must be arrays.");
+    }
+    var lines = [headers.map(csvCell).join(",")];
+    rows.forEach(function (row) {
+      lines.push(headers.map(function (header) {
+        return csvCell(row && Object.prototype.hasOwnProperty.call(row, header) ? row[header] : "");
+      }).join(","));
+    });
+    return "\uFEFF" + lines.join("\r\n") + "\r\n";
+  }
+
+  return Object.freeze({
+    createSchedule: createSchedule,
+    makeDigits: makeDigits,
+    classify: classify,
+    scoreDigits: scoreDigits,
+    geometry: geometry,
+    summarize: summarize,
+    toCSV: toCSV,
+    TRIAL_HEADERS: TRIAL_HEADERS,
+    BLOCK_HEADERS: BLOCK_HEADERS
+  });
+});
+  </script>
+  <script id="sheet-client">
+/* Local outbox + receipt-confirmed Google Apps Script transport. No auto-upload. */
+(function (root) {
+  'use strict';
+  var PROTOCOL = 'ic-demo-v1';
+  var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  var MAX_SEND_ATTEMPTS = 2;
+  var RECEIPT_DELAYS = [0, 700, 1600];
+  var POST_TIMEOUT_MS = 8000;
+  var JSONP_TIMEOUT_MS = 6000;
+  var FLUSH_BUDGET_MS = 20000;
+  var callbackCounter = 0;
+
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
+  function endpointIsValid(endpoint) {
+    return typeof endpoint === 'string' && /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint);
+  }
+  function uuid() {
+    if (!root.crypto || !root.crypto.getRandomValues) throw new Error('Secure browser randomness is unavailable. Use an HTTPS browser page.');
+    if (root.crypto.randomUUID) return root.crypto.randomUUID();
+    var bytes = new Uint8Array(16);
+    root.crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    var hex = Array.from(bytes, function (byte) { return byte.toString(16).padStart(2, '0'); }).join('');
+    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+  }
+  // Match the collector's canonical JSON exactly; array order is meaningful.
+  function canonical(value) {
+    if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+    if (value !== null && typeof value === 'object') return '{' + Object.keys(value).sort().map(function (key) {
+      return JSON.stringify(key) + ':' + canonical(value[key]);
+    }).join(',') + '}';
+    return JSON.stringify(value);
+  }
+  async function fingerprint(envelope) {
+    if (!root.crypto || !root.crypto.subtle || !root.TextEncoder) throw new Error('Secure receipt verification is unavailable. Use an up-to-date HTTPS browser.');
+    var digest = await root.crypto.subtle.digest('SHA-256', new root.TextEncoder().encode(canonical(envelope)));
+    return Array.from(new Uint8Array(digest), function (byte) { return byte.toString(16).padStart(2, '0'); }).join('');
+  }
+  function checkEnvelope(e) {
+    if (!e || e.protocol !== PROTOCOL || !UUID_RE.test(e.batch_id) || !UUID_RE.test(e.session_id) || !e.records ||
+        !Array.isArray(e.records.trials) || !Array.isArray(e.records.blocks) ||
+        e.records.trials.length + e.records.blocks.length === 0 || e.records.trials.length > 120 || e.records.blocks.length > 60) {
+      throw new Error('Invalid upload batch.');
+    }
+    var ids = new Set();
+    e.records.trials.concat(e.records.blocks).forEach(function (row) {
+      if (!row || typeof row !== 'object' || Array.isArray(row) || typeof row.record_id !== 'string' ||
+          !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/.test(row.record_id) || row.session_id !== e.session_id || ids.has(row.record_id)) {
+        throw new Error('Every record needs a unique ID and the batch session ID.');
+      }
+      ids.add(row.record_id);
+      Object.keys(row).forEach(function (key) {
+        var value = row[key];
+        if (value !== null && typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') throw new Error('Upload records must contain flat values.');
+        if (typeof value === 'number' && !Number.isFinite(value)) throw new Error('Upload records must contain finite numbers.');
+        if (typeof value === 'string' && value.length > 20000) throw new Error('An upload field is too large.');
+      });
+    });
+  }
+  function idsMatch(expected, actual) {
+    if (!Array.isArray(actual) || actual.length !== expected.length || new Set(actual).size !== actual.length) return false;
+    var a = actual.slice().sort();
+    var b = expected.slice().sort();
+    return b.every(function (id, index) { return id === a[index]; });
+  }
+
+  /**
+   * pendingCount() counts batches. pendingRecords() returns exportable envelopes
+   * with endpoint and queued_at_utc metadata. POST bodies omit that metadata.
+   * flush() is explicit: call and await it only between timed trials/blocks.
+   */
+  function ICDataClient(options) {
+    options = options || {};
+    this.endpoint = typeof options.endpoint === 'string' ? options.endpoint.trim() : '';
+    this.storageKey = options.storageKey || 'ic-demo.outbox.v1';
+    this.onStatus = typeof options.onStatus === 'function' ? options.onStatus : function () {};
+    this.storageAvailable = true;
+    this._storage = null;
+    this._batches = [];
+    this._acknowledged = new Set();
+    this._flushPromise = null;
+    this._storageProblem = '';
+    try {
+      this._storage = root.localStorage;
+      if (!this._storage) throw new Error('No browser storage');
+      this._batches = this._readStored();
+      // Probe writes too: some privacy modes permit reads but reject writes.
+      var probeKey = this.storageKey + '.probe';
+      this._storage.setItem(probeKey, '1');
+      this._storage.removeItem(probeKey);
+    } catch (error) {
+      this.storageAvailable = false;
+      this._storageProblem = 'Browser storage is unavailable or unreadable. New data is held in memory only; download it before closing or refreshing this page.';
+    }
+    if (this.endpoint && !endpointIsValid(this.endpoint)) {
+      this._notify('error', 'The collector URL is invalid. Use its HTTPS script.google.com/macros/s/.../exec address.');
+    } else if (!this.storageAvailable) {
+      this._notify('error', this._storageProblem);
+    } else if (this._batches.length) {
+      this._notify('pending', 'Recovered ' + this._batches.length + ' unconfirmed upload batch(es) from this browser.');
+    } else {
+      this._notify('local', this.isConfigured() ? 'Collector configured. Data will be kept locally before upload.' : 'Preview/local mode: no Google Sheets collector is configured.');
+    }
+  }
+
+  ICDataClient.prototype.isConfigured = function () { return endpointIsValid(this.endpoint); };
+  ICDataClient.prototype.pendingCount = function () { return this._batches.length; };
+  ICDataClient.prototype.pendingRecords = function () {
+    return this._batches.map(function (batch) {
+      var exported = clone(batch.envelope);
+      exported.endpoint = batch.endpoint;
+      exported.queued_at_utc = batch.queued_at_utc;
+      return exported;
+    });
+  };
+  ICDataClient.prototype._notify = function (state, message) {
+    if (!this.storageAvailable && message.indexOf('memory only') < 0) message += ' ' + this._storageProblem;
+    try { this.onStatus({state: state, pending: this.pendingCount(), message: message}); } catch (_) { /* UI callbacks cannot lose queued data. */ }
+  };
+  ICDataClient.prototype._readStored = function () {
+    var text = this._storage.getItem(this.storageKey);
+    if (!text) return [];
+    var parsed = JSON.parse(text);
+    if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.batches)) throw new Error('Unrecognized outbox format');
+    parsed.batches.forEach(function (batch) {
+      if (!batch || typeof batch.endpoint !== 'string' || typeof batch.queued_at_utc !== 'string') throw new Error('Invalid saved outbox');
+      checkEnvelope(batch.envelope);
+    });
+    return parsed.batches;
+  };
+  ICDataClient.prototype._persist = function () {
+    if (!this.storageAvailable) return false;
+    try {
+      // Merge recent writes from another page/class before replacing the outbox.
+      // The backend also de-duplicates if two tabs submit the same batch.
+      var merged = new Map();
+      var self = this;
+      this._readStored().concat(this._batches).forEach(function (batch) {
+        var id = batch.envelope.batch_id;
+        if (self._acknowledged.has(id)) return;
+        if (merged.has(id) && canonical(merged.get(id)) !== canonical(batch)) throw new Error('Conflicting local batch IDs');
+        merged.set(id, batch);
+      });
+      this._batches = Array.from(merged.values());
+      this._storage.setItem(this.storageKey, JSON.stringify({version: 1, batches: this._batches}));
+      return true;
+    } catch (_) {
+      this.storageAvailable = false;
+      this._storageProblem = 'Browser storage could not be updated. New data is held in memory only; download it before closing or refreshing this page.';
+      return false;
+    }
+  };
+  ICDataClient.prototype.enqueue = function (input) {
+    input = input || {};
+    var envelope = {protocol: PROTOCOL, batch_id: uuid(), session_id: input.session_id,
+      records: {trials: input.trials || [], blocks: input.blocks || []}};
+    // Validate before cloning, since JSON serialization turns NaN into null.
+    checkEnvelope(envelope);
+    if (JSON.stringify(envelope).length > 1000000) throw new Error('The upload batch is too large. Split it into smaller batches.');
+    envelope = clone(envelope);
+    this._batches.push({endpoint: this.endpoint, queued_at_utc: new Date().toISOString(), envelope: envelope});
+    this._persist(); // Outbox exists before any network request can be made.
+    this._notify(this.storageAvailable ? (this.isConfigured() ? 'pending' : 'local') : 'error',
+      this.isConfigured() ? 'Data queued locally; awaiting server confirmation.' : 'Data retained locally. No collector is configured.');
+    return envelope.batch_id;
+  };
+  ICDataClient.prototype._sleep = function (ms) {
+    return new Promise(function (resolve) { root.setTimeout(resolve, ms); });
+  };
+  ICDataClient.prototype._post = async function (batch, deadline) {
+    if (!endpointIsValid(batch.endpoint)) throw new Error('Invalid collector destination');
+    if (typeof root.fetch !== 'function' || typeof root.AbortController !== 'function') throw new Error('This browser does not support uploads.');
+    var remaining = deadline === undefined ? POST_TIMEOUT_MS : Math.min(POST_TIMEOUT_MS, deadline - Date.now());
+    if (remaining <= 0) throw new Error('Upload time budget reached');
+    var controller = new root.AbortController();
+    var timer = root.setTimeout(function () { controller.abort(); }, remaining);
+    try {
+      // An opaque response confirms neither acceptance nor persistence. Its body,
+      // status and ok flag are NEVER used to mark a batch as saved.
+      await root.fetch(batch.endpoint, {method: 'POST', mode: 'no-cors', credentials: 'omit', redirect: 'follow', cache: 'no-store',
+        headers: {'Content-Type': 'text/plain;charset=UTF-8'}, body: JSON.stringify(batch.envelope), signal: controller.signal});
+    } finally {
+      root.clearTimeout(timer);
+    }
+  };
+  ICDataClient.prototype._jsonp = function (endpoint, parameters, deadline) {
+    if (!endpointIsValid(endpoint)) return Promise.reject(new Error('Invalid collector destination'));
+    return new Promise(function (resolve, reject) {
+      var remaining = deadline === undefined ? JSONP_TIMEOUT_MS : Math.min(JSONP_TIMEOUT_MS, deadline - Date.now());
+      if (remaining <= 0) { reject(new Error('Upload time budget reached')); return; }
+      if (!root.document || !root.document.createElement || !root.document.head) { reject(new Error('Receipt transport unavailable')); return; }
+      var callback = 'ICJSONP_' + uuid().replace(/-/g, '_') + '_' + (++callbackCounter);
+      var script = root.document.createElement('script');
+      var settled = false;
+      var timer;
+      function cleanup() {
+        root.clearTimeout(timer);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete root[callback]; } catch (_) { root[callback] = undefined; }
+      }
+      function finish(error, data) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (error) reject(error); else resolve(data);
+      }
+      root[callback] = function (data) { finish(null, data); };
+      script.async = true;
+      script.referrerPolicy = 'no-referrer';
+      var query = Object.keys(parameters).map(function (key) { return encodeURIComponent(key) + '=' + encodeURIComponent(parameters[key]); });
+      query.push('callback=' + encodeURIComponent(callback));
+      query.push('_=' + Date.now());
+      script.src = endpoint + '?' + query.join('&');
+      script.onerror = function () { finish(new Error('Collector receipt request failed')); };
+      timer = root.setTimeout(function () { finish(new Error('Collector receipt request timed out')); }, remaining);
+      try { root.document.head.appendChild(script); } catch (error) { finish(error); }
+    });
+  };
+  ICDataClient.prototype.ping = async function () {
+    if (!this.isConfigured()) return false;
+    try {
+      var result = await this._jsonp(this.endpoint, {action: 'ping'});
+      return Boolean(result && result.ok === true && result.protocol === PROTOCOL && result.configured === true);
+    } catch (_) { return false; }
+  };
+  ICDataClient.prototype._sendBatch = async function (batch, deadline) {
+    if (deadline === undefined) deadline = Date.now() + FLUSH_BUDGET_MS;
+    if (Date.now() >= deadline) return false;
+    var envelope = batch.envelope;
+    var expectedHash = await fingerprint(envelope);
+    var trialIds = envelope.records.trials.map(function (row) { return row.record_id; });
+    var blockIds = envelope.records.blocks.map(function (row) { return row.record_id; });
+    for (var attempt = 0; attempt < MAX_SEND_ATTEMPTS; attempt += 1) {
+      if (Date.now() >= deadline) return false;
+      try { await this._post(batch, deadline); } catch (_) { /* A response can be lost after persistence: still check the receipt. */ }
+      for (var poll = 0; poll < RECEIPT_DELAYS.length; poll += 1) {
+        if (Date.now() + RECEIPT_DELAYS[poll] >= deadline) return false;
+        if (RECEIPT_DELAYS[poll]) await this._sleep(RECEIPT_DELAYS[poll]);
+        if (Date.now() >= deadline) return false;
+        var receipt;
+        try { receipt = await this._jsonp(batch.endpoint, {action: 'receipt', batch_id: envelope.batch_id, session_id: envelope.session_id}, deadline); }
+        catch (_) { continue; }
+        if (receipt && receipt.ok === true && receipt.found === true && receipt.protocol === PROTOCOL &&
+            receipt.batch_id === envelope.batch_id && receipt.session_id === envelope.session_id &&
+            receipt.payload_sha256 === expectedHash && idsMatch(trialIds, receipt.trial_ids) && idsMatch(blockIds, receipt.block_ids)) return true;
+      }
+      if (attempt + 1 < MAX_SEND_ATTEMPTS) {
+        if (Date.now() + 1000 >= deadline) return false;
+        await this._sleep(1000);
+      }
+    }
+    return false;
+  };
+  ICDataClient.prototype.flush = function () {
+    if (this._flushPromise) return this._flushPromise;
+    var self = this;
+    this._flushPromise = this._flush().finally(function () { self._flushPromise = null; });
+    return this._flushPromise;
+  };
+  ICDataClient.prototype._flush = async function () {
+    this._persist();
+    if (!this.isConfigured()) {
+      this._notify('local', 'Local mode: uploads are paused until a valid collector is configured. Existing batches retain their original destination.');
+      return;
+    }
+    var candidates = this._batches.filter(function (batch) { return batch.endpoint === this.endpoint; }, this);
+    if (!candidates.length) {
+      this._notify(this.pendingCount() ? 'pending' : 'saved', this.pendingCount()
+        ? 'Pending data belongs to another collector or to local mode. It has not been sent to this destination; use the pending-data download.'
+        : 'No unconfirmed uploads remain.');
+      return;
+    }
+    this._notify('saving', 'Sending locally stored data and checking the collector receipt…');
+    var deadline = Date.now() + FLUSH_BUDGET_MS;
+    var anyFailure = false;
+    for (var i = 0; i < candidates.length; i += 1) {
+      var batch = candidates[i];
+      var confirmed = false;
+      try { confirmed = await this._sendBatch(batch, deadline); } catch (_) { confirmed = false; }
+      if (confirmed) {
+        this._acknowledged.add(batch.envelope.batch_id);
+        this._batches = this._batches.filter(function (item) { return item.envelope.batch_id !== batch.envelope.batch_id; });
+        this._persist();
+      } else {
+        anyFailure = true;
+        // Do not make every queued batch wait through a disconnected network.
+        break;
+      }
+    }
+    if (this.pendingCount()) {
+      this._notify('pending', anyFailure
+        ? 'Server confirmation is unavailable. Data remains in the local outbox. Retry between trials or download the pending data.'
+        : 'Some batches retain another original destination. Download them or restore that collector URL to retry.');
+    } else {
+      this._notify('saved', 'Google Sheets confirmed all queued records.');
+    }
+  };
+
+  root.ICDataClient = ICDataClient;
+  if (typeof module !== 'undefined' && module.exports) module.exports = ICDataClient;
+})(typeof window !== 'undefined' ? window : globalThis);
+  </script>
+  <script id="task-app">
+/* Classroom adaptation of Prinzmetal, Henderson, & Ivry (1995).
+ * Timed displays use requestAnimationFrame and performance.now().
+ * No network request is started during a timed display or report.
+ */
+(function () {
+  "use strict";
+  const C = window.IC_CONFIG;
+  const Core = window.ICCore;
+  const $ = (id) => document.getElementById(id);
+  const activeKey = C.STORAGE_PREFIX + ":active";
+  const archiveKey = C.STORAGE_PREFIX + ":archive";
+  const mainBlocks = Math.max(1, Math.min(3, Number(C.MAIN_BLOCKS) || 3));
+  const digitDuration = C.STREAM_MS / C.DIGIT_COUNT;
+  const peripheralOnset = (C.PERIPHERAL_ONSET_DIGIT - 1) * digitDuration;
+  const peripheralDuration = C.PERIPHERAL_DIGITS * digitDuration;
+  const colorKeys = {"1":"red", "2":"green", "3":"blue"};
+  const colors = ["red", "green", "blue"];
+  const screens = Array.from(document.querySelectorAll(".screen"));
+  let session = null;
+  let attempt = null;
+  let phaseState = "welcome";
+  let frameHandle = 0;
+  let runToken = 0;
+  let spaceHeld = false;
+  let reportStarted = 0;
+  let storageFailed = false;
+  let uploadPromise = null;
+  let beginInFlight = false;
+  let collectorReachable = null;
+  let uiReady = false;
+  let syncStatus = {state:"local", pending:0, message:""};
+  const client = new window.ICDataClient({
+    endpoint:C.GOOGLE_SCRIPT_URL,
+    storageKey:C.STORAGE_PREFIX + ":outbox",
+    onStatus(status) { syncStatus = status; if (uiReady) renderSaveStatus(); }
+  });
+
+  function uuid() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    const b = new Uint8Array(16);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
+    else for (let i=0; i<b.length; i++) b[i] = Math.floor(Math.random()*256);
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    const h = Array.from(b, n => n.toString(16).padStart(2,"0")).join("");
+    return [h.slice(0,8),h.slice(8,12),h.slice(12,16),h.slice(16,20),h.slice(20)].join("-");
+  }
+  function randomSeed() {
+    const b = new Uint32Array(1);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
+    else b[0] = Math.floor(Math.random()*4294967296);
+    return b[0] >>> 0;
+  }
+  function round(n) { return Number.isFinite(n) ? Math.round(n*1000)/1000 : null; }
+  function percent(n) { return n === null || !Number.isFinite(n) ? "—" : Math.round(n*100)+"%"; }
+  function timestamp() {
+    const d = new Date();
+    const offset = -d.getTimezoneOffset();
+    const sign = offset >= 0 ? "+" : "-";
+    const local = new Date(d.getTime()+offset*60000).toISOString().slice(0,-1) +
+      sign + String(Math.floor(Math.abs(offset)/60)).padStart(2,"0") + ":" +
+      String(Math.abs(offset)%60).padStart(2,"0");
+    let zone = "unknown";
+    try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "unknown"; } catch (_) {}
+    return {timestamp_utc:d.toISOString(),timestamp_local:local,timezone:zone,utc_offset_minutes:offset};
+  }
+  function load(key, fallback) {
+    try { const x=localStorage.getItem(key); return x ? JSON.parse(x) : fallback; }
+    catch (_) { storageFailed=true; return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key,JSON.stringify(value)); return true; }
+    catch (_) { storageFailed=true; if(uiReady) renderSaveStatus(); return false; }
+  }
+  function persist() { if(session) save(activeKey,session); }
+  function setText(id, value) { const el=$(id); if(el) el.textContent=value; }
+  function show(screen) {
+    screens.forEach(el => { el.hidden = el.id !== screen; });
+    $("pause-overlay").hidden = true;
+    $("main-content").inert = false;
+    document.body.classList.toggle("experiment-active",screen === "task-screen");
+    if(typeof window.scrollTo === "function") window.scrollTo({top:0,left:0,behavior:"instant"});
+    const visible=$(screen);
+    if(visible && typeof visible.focus === "function") visible.focus({preventScroll:true});
+    updateProgress();
+  }
+  function plans() { return session ? session.schedule[session.phase] : []; }
+  function currentPlan() { return plans()[session.cursor]; }
+  function updateProgress() {
+    if(!session) {setText("phase-label","CLASSROOM DEMONSTRATION");return;}
+    const practice=session.phase === "practice";
+    const total=plans().length;
+    const shown=Math.min(session.cursor+1,total);
+    setText("phase-label",practice ? "PRACTICE" : "MAIN TASK");
+    setText("trial-progress",session.stage === "results" ? "Complete" :
+      (practice ? "Practice " : "Trial ")+shown+" / "+total);
+    $("progress-fill").style.width=(100*session.cursor/Math.max(1,total))+"%";
+  }
+  function renderSaveStatus() {
+    let label="",detail="";
+    if(storageFailed || client.storageAvailable === false) {
+      label="Download a backup";
+      detail="This browser could not save a local recovery copy. Keep this page open and download your data before leaving.";
+    } else if(!client.isConfigured()) {
+      label="Preview · local data only";
+      detail="Google Sheets is not connected. Your responses are on this device; use the download buttons to keep a copy.";
+    } else if(syncStatus.state === "saving") {
+      label="Saving…"; detail="Waiting for Google Sheets to confirm this save. Please keep the page open.";
+    } else if(client.pendingCount()>0) {
+      label="Save pending";
+      detail="Some data have not been confirmed by Google Sheets. They are retained on this device. Retry saving or download a backup.";
+    } else if(session && (session.trials.length || session.blocks.length)) {
+      const unqueued=session.trials.some(r=>!session.queued_trial_ids.includes(r.record_id)) ||
+        session.blocks.some(r=>!session.queued_block_ids.includes(r.record_id));
+      label=unqueued ? "Saved on this device" : "Save confirmed";
+      detail=unqueued ? "Your current block is saved on this device. It will be sent at the next break." : "Google Sheets confirmed all queued data.";
+    } else if(collectorReachable === false) {
+      label="Collector unavailable";
+      detail="The class collector did not respond. Your responses will be kept on this device and saving will be retried at a break.";
+    } else {
+      label="Ready to collect"; detail="Data are saved at the practice/main block breaks and when you finish.";
+    }
+    if(syncStatus.message && /memory|storage|quota/i.test(syncStatus.message)) detail += " "+syncStatus.message;
+    setText("save-status",label); setText("save-detail",detail);
+    $("save-status").dataset.state=storageFailed || client.storageAvailable === false ? "error" : syncStatus.state;
+  }
+  function deviceOK() { return innerWidth>=C.MIN_WIDTH && innerHeight>=C.MIN_HEIGHT; }
+  function updateDeviceWarning() {
+    $("device-warning").hidden=deviceOK();
+    if(!deviceOK()) setText("device-warning","Use a laptop or desktop with a keyboard. Enlarge this window to at least "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels. Full screen may help.");
+  }
+  function queueUnsent() {
+    if(!session) return;
+    // A class/collector change must never reroute an older session's records.
+    if(!sameCollector()) return;
+    const trialRows=session.trials.filter(r=>!session.queued_trial_ids.includes(r.record_id));
+    const blockRows=session.blocks.filter(r=>!session.queued_block_ids.includes(r.record_id));
+    if(!trialRows.length && !blockRows.length) return;
+    // At most one small block at a time in normal use; chunk recovery of older sessions.
+    while(trialRows.length || blockRows.length) {
+      const t=trialRows.splice(0,24), b=blockRows.splice(0,12);
+      client.enqueue({session_id:session.id,trials:t,blocks:b});
+      // If outbox storage failed but session storage works, retain retry eligibility.
+      if(client.storageAvailable !== false) {
+        session.queued_trial_ids.push(...t.map(r=>r.record_id));
+        session.queued_block_ids.push(...b.map(r=>r.record_id));
+      }
+      persist();
+    }
+    renderSaveStatus();
+  }
+  function flushAtBreak(button) {
+    if(uploadPromise) return uploadPromise;
+    queueUnsent();
+    if(!client.isConfigured()) return Promise.resolve();
+    if(button) button.disabled=true;
+    uploadPromise=Promise.resolve().then(()=>client.flush()).catch(err=>{
+      syncStatus={state:"pending",pending:client.pendingCount(),message:String(err.message||err)};
+    }).finally(()=>{
+      uploadPromise=null; if(button) button.disabled=false; renderSaveStatus();
+    });
+    return uploadPromise;
+  }
+  function archiveCurrent() {
+    if(!session) return;
+    recoverPending("session_archived");
+    queueUnsent();
+    const old=load(archiveKey,[]);
+    const existing=old.findIndex(x=>x.id===session.id);
+    if(existing>=0) old[existing]=session; else old.push(session);
+    save(archiveKey,old); // Never silently discard previous participants on a shared computer.
+  }
+  async function newSession() {
+    if(!deviceOK()) {updateDeviceWarning();$("device-warning").scrollIntoView({block:"center"});return;}
+    const participant=$("participant-code").value.trim();
+    const classCode=$("class-code").value.trim();
+    if(!/^[A-Za-z0-9_-]{0,40}$/.test(participant) || !/^[A-Za-z0-9_-]{0,40}$/.test(classCode)) {
+      setText("setup-notice","Use only letters, numbers, underscores, or hyphens in the participant and class codes (maximum 40 characters).");
+      $("setup-notice").hidden=false; return;
+    }
+    $("start-button").disabled=true;
+    if(session) archiveCurrent();
+    const id=uuid(), seed=randomSeed(), schedule=Core.createSchedule(seed);
+    schedule.main=schedule.main.slice(0,mainBlocks*12);
+    session={id,seed,participant_id:participant||("P-"+id.slice(0,8)),class_code:classCode,
+      task_version:C.TASK_VERSION,started_at_utc:new Date().toISOString(),phase:"practice",cursor:0,
+      stage:"instructions",schedule,trials:[],blocks:[],attempts:{},queued_trial_ids:[],queued_block_ids:[],pendingAttempt:null,
+      config_snapshot:JSON.parse(JSON.stringify(C))};
+    persist();
+    if(client.isConfigured()) {
+      try {
+        const ok=await client.ping();
+        collectorReachable=ok;
+        if(!ok) {setText("setup-notice","The collector could not be confirmed. Responses will remain on this device until a save succeeds. Download a backup at the end.");$("setup-notice").hidden=false;}
+      } catch (_) {collectorReachable=false;syncStatus={state:"pending",pending:client.pendingCount(),message:"Collector not reachable."};}
+    }
+    $("start-button").disabled=false;
+    phaseState="instructions";show("instructions-screen");renderSaveStatus();
+  }
+  function ready(copy) {
+    phaseState="ready";session.stage="ready";persist();show("ready-screen");
+    setText("ready-title",session.phase === "practice" ? "First, try six practice trials." : "Ready for the main task.");
+    setText("ready-copy",copy || "Keep looking at the center. Press Space for every 0. Then report the peripheral target’s color and letter.");
+    $("begin-trial-button").disabled=false;
+  }
+  async function begin() {
+    if(beginInFlight || attempt || !["ready","break","paused"].includes(phaseState)) return;
+    beginInFlight=true;
+    try {
+      if(uploadPromise) await uploadPromise;
+      if(C.OFFER_FULLSCREEN && !document.fullscreenElement && document.documentElement.requestFullscreen) {
+        try {await document.documentElement.requestFullscreen();} catch (_) {/* Fullscreen is optional. */}
+      }
+      if(!deviceOK()) {setText("ready-copy","Please enlarge your browser window before starting. A minimum of "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels is needed to keep all letters visible.");return;}
+      startTrial();
+    } finally {beginInFlight=false;}
+  }
+  function blankRow(headers) {return Object.fromEntries(headers.map(k=>[k,null]));}
+  function baseRow(headers) {
+    return Object.assign(blankRow(headers),{record_id:uuid(),session_id:session.id,participant_id:session.participant_id,
+      class_code:session.class_code,task_version:session.task_version,session_seed:session.seed},timestamp());
+  }
+  function prepareCanvas(plan) {
+    const canvas=$("stimulus-canvas");
+    const rect=canvas.getBoundingClientRect();
+    const width=Math.round(rect.width),height=Math.round(rect.height),dpr=devicePixelRatio||1;
+    canvas.width=Math.round(width*dpr); canvas.height=Math.round(height*dpr);
+    const ctx=canvas.getContext("2d",{alpha:false});
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const geometry=Core.geometry(width,height,plan.distance,plan.quadrant,plan.target_position);
+    return {canvas,ctx,width,height,dpr,geometry};
+  }
+  function draw(center, peripheral) {
+    if(!attempt) return;
+    const a=attempt, ctx=a.canvas.ctx,g=a.canvas.geometry;
+    ctx.fillStyle="#000000";ctx.fillRect(0,0,a.canvas.width,a.canvas.height);
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.font="500 "+g.digit_font_px+"px Arial, Helvetica, sans-serif";
+    ctx.fillStyle="#ffffff";ctx.fillText(center,g.center_x,g.center_y);
+    if(peripheral) {
+      ctx.font="500 "+g.letter_font_px+"px Arial, Helvetica, sans-serif";
+      g.positions.forEach((p,index)=>{
+        const isTarget=index===(a.plan.target_position === "left" ? 1 : 2);
+        const isInner=index===1||index===2;
+        ctx.fillStyle=isInner ? C.COLORS[isTarget?a.plan.target_color:a.plan.distractor_color] : "#ffffff";
+        ctx.fillText(isTarget?a.plan.target_letter:"O",p.x,p.y);
+      });
+    }
+  }
+  function startTrial() {
+    if(attempt || !session || !currentPlan()) return;
+    if(!deviceOK()) {ready("Enlarge the window before continuing.");return;}
+    const plan=currentPlan();
+    phaseState="fixation";session.stage="trial";show("task-screen");
+    setText("task-caption",session.phase === "practice" ? "Practice · watch the center" : "Watch the center");
+    setText("task-note","Press Space whenever 0 appears. Keep your eyes at the center.");
+    const key=plan.phase+"-"+plan.planned_trial;
+    const attemptNumber=(session.attempts[key]||0)+1;session.attempts[key]=attemptNumber;
+    const digitSeed=(session.seed ^ Math.imul(plan.planned_trial+1,2654435761) ^ Math.imul(attemptNumber,2246822519) ^ (plan.phase==="main"?0x95a31:0))>>>0;
+    const row=Object.assign(baseRow(Core.TRIAL_HEADERS),plan,{attempt:attemptNumber,trial_status:"in_progress",digit_seed:digitSeed,
+      response_window_ms:C.RESPONSE_WINDOW_MS,grace_interval_ms:C.GRACE_MS,
+      stream_duration_planned_ms:C.STREAM_MS,digit_duration_ms:round(digitDuration),
+      peripheral_onset_planned_ms:round(peripheralOnset),peripheral_duration_planned_ms:round(peripheralDuration),
+      viewport_width:innerWidth,viewport_height:innerHeight,fullscreen:Boolean(document.fullscreenElement)});
+    const canvas=prepareCanvas(plan), g=canvas.geometry;
+    Object.assign(row,{canvas_width:canvas.width,canvas_height:canvas.height,device_pixel_ratio:canvas.dpr,
+      letter_font_px:g.letter_font_px,target_x_px:round(g.target_x-g.center_x),target_y_px:round(g.target_y-g.center_y),
+      distractor_x_px:round(g.distractor_x-g.center_x),distractor_y_px:round(g.distractor_y-g.center_y),eccentricity_px:round(g.eccentricity_px)});
+    const digits=Core.makeDigits(digitSeed);
+    row.digits_json=JSON.stringify(digits);
+    attempt={plan,row,canvas,digits,onsets:Array(C.DIGIT_COUNT).fill(null),presses:[],
+      fixationStart:null,streamStart:null,streamEnd:null,lastFrame:null,lastDigit:-1,visible:false,
+      peripheralStart:null,peripheralEnd:null,frameCount:0,dropped:0,maxGap:0,skipped:0,token:++runToken};
+    session.pendingAttempt=row;persist();
+    draw("+",false);
+    const token=attempt.token;
+    frameHandle=requestAnimationFrame(t=>tick(t,token));
+  }
+  function tick(now,token) {
+    if(!attempt || attempt.token!==token) return;
+    const a=attempt;
+    if(a.fixationStart===null) a.fixationStart=now;
+    if(a.streamStart===null) {
+      if(now-a.fixationStart<C.FIXATION_MS) {frameHandle=requestAnimationFrame(t=>tick(t,token));return;}
+      a.streamStart=now;a.lastFrame=now;phaseState="stream";
+    }
+    const elapsed=now-a.streamStart;
+    if(a.lastFrame!==null) {
+      const gap=now-a.lastFrame;a.maxGap=Math.max(a.maxGap,gap);
+      // This is a 60-Hz-referenced estimate, not a hardware frame counter.
+      if(gap>25) a.dropped+=Math.max(0,Math.round(gap/(1000/60))-1);
+      if(gap>C.FRAME_ABORT_MS) {a.lastFrame=now;interrupt("timing_gap","The display was interrupted by a long frame delay. This trial will be repeated.");return;}
+    }
+    a.lastFrame=now;a.frameCount++;
+    if(elapsed<C.STREAM_MS) {
+      const digitIndex=Math.min(C.DIGIT_COUNT-1,Math.floor(elapsed/digitDuration));
+      if(digitIndex>a.lastDigit) {
+        const skipped=digitIndex-a.lastDigit-1;a.skipped+=skipped;
+        if(skipped>0) {interrupt("skipped_digit","A digit could not be shown on time. This trial will be repeated.");return;}
+        a.onsets[digitIndex]=round(elapsed);a.lastDigit=digitIndex;
+      }
+      const peripheral=elapsed>=peripheralOnset&&elapsed<peripheralOnset+peripheralDuration;
+      if(peripheral&&!a.visible) a.peripheralStart=elapsed;
+      if(!peripheral&&a.visible) a.peripheralEnd=elapsed;
+      a.visible=peripheral;
+      draw(String(a.digits[digitIndex]),peripheral);
+    } else {
+      if(a.streamEnd===null) {
+        a.streamEnd=elapsed;
+        if(a.visible) {a.peripheralEnd=elapsed;a.visible=false;}
+      }
+      phaseState="grace";draw("+",false);
+      if(elapsed>=C.STREAM_MS+C.GRACE_MS) {finishTimedDisplay();return;}
+    }
+    frameHandle=requestAnimationFrame(t=>tick(t,token));
+  }
+  function finalizeMetrics() {
+    if(!attempt) return;
+    const a=attempt;
+    const scored=Core.scoreDigits(a.digits,a.onsets,a.presses,C.RESPONSE_WINDOW_MS);
+    Object.assign(a.row,{zero_targets:scored.targets,digit_hits:scored.hits,digit_misses:scored.misses,
+      digit_false_alarms:scored.false_alarms,digit_hit_rate:scored.hit_rate,mean_digit_hit_rt_ms:round(scored.mean_hit_rt_ms),
+      stream_duration_actual_ms:round(a.streamEnd),peripheral_onset_actual_ms:round(a.peripheralStart),
+      peripheral_duration_actual_ms:a.peripheralStart!==null&&a.peripheralEnd!==null?round(a.peripheralEnd-a.peripheralStart):null,
+      frame_count:a.frameCount,estimated_dropped_frames:a.dropped,max_frame_gap_ms:round(a.maxGap),
+      timing_warning:a.maxGap>C.FRAME_WARNING_MS||a.skipped>0,skipped_digits:a.skipped,
+      digit_onsets_json:JSON.stringify(a.onsets),digit_presses_json:JSON.stringify(a.presses),digit_press_results_json:JSON.stringify(scored.press_results)});
+  }
+  function finishTimedDisplay() {
+    if(!attempt) return;
+    cancelAnimationFrame(frameHandle);finalizeMetrics();
+    phaseState="color";session.stage="color";persist();
+    show("report-screen");
+    $("color-options").hidden=false;$("letter-options").hidden=true;
+    setText("report-prompt","What color was the target letter?");
+    setText("report-hint","Report the color of T, X, or L. Choose your best answer.");
+    setText("report-progress","1 of 2 · COLOR");
+    reportStarted=performance.now();
+  }
+  function reportColor(color) {
+    if(phaseState!=="color"||!attempt||!colors.includes(color)) return;
+    attempt.row.response_color=color;attempt.row.color_rt_ms=round(performance.now()-reportStarted);
+    phaseState="letter";session.stage="letter";persist();
+    $("color-options").hidden=true;$("letter-options").hidden=false;
+    setText("report-prompt","Which target letter did you see?");
+    setText("report-hint","Choose T, X, or L. Choose your best answer.");
+    setText("report-progress","2 of 2 · LETTER");reportStarted=performance.now();
+    $("report-prompt").focus({preventScroll:true});
+  }
+  function reportLetter(letter) {
+    if(phaseState!=="letter"||!attempt||!["T","X","L"].includes(letter)) return;
+    const row=attempt.row;
+    row.response_letter=letter;row.letter_rt_ms=round(performance.now()-reportStarted);
+    row.letter_correct=letter===row.target_letter;row.color_correct=row.response_color===row.target_color;
+    row.response_category=Core.classify(row.target_letter,row.target_color,row.distractor_color,letter,row.response_color);
+    row.trial_status="complete";row.interruption_reason="";
+    session.trials.push(row);session.cursor++;session.pendingAttempt=null;attempt=null;
+    if(session.phase==="practice") {
+      phaseState="feedback";session.stage="practice_feedback";persist();practiceFeedback(row);
+    } else if(session.cursor>=plans().length) {
+      makeBlockRows(row.block);phaseState="results";session.stage="results";persist();results();
+    } else if(session.cursor%12===0) {
+      makeBlockRows(row.block);phaseState="break";session.stage="block_break";persist();blockBreak();
+    } else {session.stage="ready";persist();startTrial();}
+  }
+  function practiceFeedback(row) {
+    show("feedback-screen");
+    setText("feedback-title",row.response_category==="correct"?"That’s the target.":"Here is what was shown.");
+    setText("feedback-copy","The target was "+row.target_color.toUpperCase()+" "+row.target_letter+". You reported "+row.response_color.toUpperCase()+" "+row.response_letter+".");
+    setText("feedback-detail","Center task: "+row.digit_hits+" of "+row.zero_targets+" zeros detected; "+row.digit_false_alarms+" extra Space press"+(row.digit_false_alarms===1?"":"es")+". Keep looking at the center throughout the stream.");
+    $("next-practice-button").textContent=session.cursor>=plans().length?"Finish practice":"Next practice trial";
+  }
+  async function nextPractice() {
+    if(phaseState!=="feedback") return;
+    if(session.cursor>=session.schedule.practice.length) {
+      makeBlockRows(0);queueUnsent();
+      session.phase="main";session.cursor=0;session.stage="ready";persist();
+      ready("Practice is complete. The main task has "+(mainBlocks*12)+" trials in "+mainBlocks+" block"+(mainBlocks===1?"":"s")+". You’ll see your results at the end.");
+      await flushAtBreak($("begin-trial-button"));
+    } else startTrial();
+  }
+  function makeBlockRows(block) {
+    ["near","middle","far"].forEach(distance=>{
+      if(session.blocks.some(r=>r.phase===session.phase&&r.block===block&&r.distance===distance)) return;
+      const selected=session.trials.filter(r=>r.phase===session.phase&&r.block===block&&r.distance===distance);
+      const summary=Core.summarize(selected);
+      const row=Object.assign(baseRow(Core.BLOCK_HEADERS),{
+        phase:session.phase,block,distance,planned_trials:plans().filter(p=>p.block===block&&p.distance===distance).length,
+        completed_trials:summary.n,interrupted_attempts:selected.filter(r=>r.trial_status!=="complete").length,
+        timing_warning_trials:selected.filter(r=>r.trial_status==="complete"&&r.timing_warning).length,
+        correct:summary.correct,conjunction_report:summary.conjunction_report,color_feature_error:summary.color_feature_error,
+        letter_feature_error:summary.letter_feature_error,letter_feature_conjunction_error:summary.letter_feature_conjunction_error,
+        color_letter_feature_error:summary.color_letter_feature_error,letter_correct_n:summary.letter_correct_n,
+        swap_rate_given_letter_correct:summary.swap_rate_given_letter_correct,
+        absent_color_rate_given_letter_correct:summary.absent_color_rate_given_letter_correct,
+        zero_targets:summary.zero_targets,digit_hits:summary.digit_hits,digit_misses:summary.digit_misses,
+        digit_false_alarms:summary.digit_false_alarms,digit_hit_rate:summary.digit_hit_rate});
+      session.blocks.push(row);
+    });
+    persist();
+  }
+  function blockBreak() {
+    show("break-screen");
+    const finished=Math.floor(session.cursor/12);
+    const rows=session.trials.filter(r=>r.phase==="main"&&r.block===finished);
+    const summary=Core.summarize(rows);
+    setText("break-title","Block "+finished+" of "+mainBlocks+" complete.");
+    setText("break-copy","Take a short break. Keep the same viewing distance for the next block.");
+    setText("break-summary","Center task: "+summary.digit_hits+" / "+summary.zero_targets+" zeros detected ("+percent(summary.digit_hit_rate)+").");
+    flushAtBreak($("continue-button"));
+  }
+  function results() {
+    show("results-screen");
+    const rows=session.trials.filter(r=>r.phase==="main");
+    const summary=Core.summarize(rows);
+    setText("results-summary",summary.n+" main trials completed · participant "+session.participant_id);
+    const body=$("results-table-body");body.replaceChildren();
+    ["near","middle","far"].forEach(distance=>{
+      const s=Core.summarize(rows.filter(r=>r.distance===distance));
+      const tr=document.createElement("tr");
+      const values=[distance.charAt(0).toUpperCase()+distance.slice(1),s.n,percent(s.letter_correct),
+        s.conjunction_report+" ("+percent(s.swap_rate_given_letter_correct)+")",
+        s.color_feature_error+" ("+percent(s.absent_color_rate_given_letter_correct)+")",percent(s.digit_hit_rate)];
+      values.forEach(value=>{const td=document.createElement("td");td.textContent=String(value);tr.appendChild(td);});body.appendChild(tr);
+    });
+    setText("results-note","Color-swap and absent-color percentages use trials with a correct letter response as their denominator. Practice and interrupted attempts are excluded. Distances are relative screen positions, not calibrated visual angles.");
+    const warnings=rows.filter(r=>r.trial_status==="complete"&&r.timing_warning).length;
+    if(warnings) $("results-note").append(document.createTextNode(" "+warnings+" completed trial(s) have a timing warning; the exported data retain these flags."));
+    session.stage="results";persist();flushAtBreak($("restart-button"));
+  }
+  function interrupt(reason,message) {
+    if(!attempt || !["fixation","stream","grace","color","letter"].includes(phaseState)) return;
+    cancelAnimationFrame(frameHandle);runToken++;
+    finalizeMetrics();
+    attempt.row.trial_status="interrupted";attempt.row.interruption_reason=reason;
+    attempt.row.response_category="incomplete";
+    session.trials.push(attempt.row);session.pendingAttempt=null;attempt=null;
+    phaseState="paused";session.stage="paused";persist();renderSaveStatus();
+    $("pause-overlay").hidden=false;setText("pause-reason",message||"This trial was interrupted. Your completed responses are safe. The same condition will be repeated.");
+    $("main-content").inert=true;
+    $("resume-trial-button").focus();
+  }
+  function recoverPending(reason) {
+    if(session.pendingAttempt) {
+      const row=session.pendingAttempt;
+      row.trial_status="interrupted";row.interruption_reason=reason;row.response_category="incomplete";
+      if(!session.trials.some(r=>r.record_id===row.record_id)) session.trials.push(row);
+      session.pendingAttempt=null;session.stage="ready";persist();
+    }
+  }
+  function compatibleSession() {
+    const saved=session.config_snapshot;
+    const keys=["TASK_VERSION","MAIN_BLOCKS","FIXATION_MS","STREAM_MS","DIGIT_COUNT",
+      "PERIPHERAL_ONSET_DIGIT","PERIPHERAL_DIGITS","RESPONSE_WINDOW_MS","GRACE_MS",
+      "FRAME_WARNING_MS","FRAME_ABORT_MS","COLORS"];
+    return saved && sameCollector() && keys.every(key=>JSON.stringify(saved[key])===JSON.stringify(C[key]));
+  }
+  function sameCollector() {
+    return session && session.config_snapshot &&
+      String(session.config_snapshot.GOOGLE_SCRIPT_URL||"").trim()===String(C.GOOGLE_SCRIPT_URL||"").trim();
+  }
+  function resumeStored() {
+    if(!session) return;
+    if(!compatibleSession()) {
+      setText("setup-notice","This saved session used a different task configuration or class collector. Download the local backup, then start a new session. The earlier responses are retained.");
+      $("setup-notice").hidden=false;$("recovered-data-panel").hidden=false;
+      return;
+    }
+    recoverPending("page_reload");
+    if(session.stage==="results" || session.phase==="main"&&session.cursor>=plans().length) {results();return;}
+    if(session.stage==="practice_feedback") {
+      phaseState="feedback";practiceFeedback(session.trials.filter(r=>r.trial_status==="complete").slice(-1)[0]);return;
+    }
+    if(session.stage==="block_break") {phaseState="break";blockBreak();return;}
+    if(session.phase==="practice"&&session.cursor>=plans().length) {phaseState="feedback";nextPractice();return;}
+    ready("Your completed trials have been restored. Any unfinished trial will be repeated.");
+  }
+  function download(name,text,type) {
+    const blob=new Blob([text],{type:type||"text/plain;charset=utf-8"});
+    const url=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function downloadCSV(kind) {
+    if(!session) return;
+    const headers=kind==="trials"?Core.TRIAL_HEADERS:Core.BLOCK_HEADERS;
+    download("IC_"+(kind==="trials"?"Trials":"Blocks")+"_"+session.id+".csv",Core.toCSV(session[kind],headers),"text/csv;charset=utf-8");
+  }
+  function downloadJSON() {
+    download("IC_Backup_"+(session?session.id:"pending")+".json",JSON.stringify({exported_at_utc:new Date().toISOString(),
+      protocol:"ic-demo-v1",active_session:session,archived_sessions:load(archiveKey,[]),pending_batches:client.pendingRecords()},null,2),"application/json;charset=utf-8");
+  }
+  function returnToWelcome() {
+    archiveCurrent();session=null;attempt=null;phaseState="welcome";
+    try {localStorage.removeItem(activeKey);} catch (_) {}
+    $("participant-code").value="";$("resume-panel").hidden=true;
+    show("welcome-screen");setText("trial-progress","");$("progress-fill").style.width="0%";
+    $("recovered-data-panel").hidden=client.pendingCount()===0;
+    renderSaveStatus();
+  }
+  document.addEventListener("keydown",event=>{
+    if(phaseState==="paused" && event.key==="Tab") {
+      event.preventDefault();$("resume-trial-button").focus();return;
+    }
+    if(event.code==="Space") {
+      if(["fixation","stream","grace","color","letter"].includes(phaseState)) event.preventDefault();
+      if(event.repeat||spaceHeld) return;spaceHeld=true;
+      if(attempt&&["stream","grace"].includes(phaseState)&&!event.ctrlKey&&!event.altKey&&!event.metaKey) {
+        attempt.presses.push(round(performance.now()-attempt.streamStart));
+      }
+      return;
+    }
+    if(event.repeat||event.ctrlKey||event.altKey||event.metaKey) return;
+    if(phaseState==="color"&&colorKeys[event.key]) {event.preventDefault();reportColor(colorKeys[event.key]);}
+    else if(phaseState==="letter"&&["T","X","L"].includes(event.key.toUpperCase())) {event.preventDefault();reportLetter(event.key.toUpperCase());}
+  });
+  document.addEventListener("keyup",event=>{if(event.code==="Space")spaceHeld=false;});
+  document.addEventListener("visibilitychange",()=>{if(document.hidden){spaceHeld=false;interrupt("tab_hidden","The tab was hidden. Return to the task to repeat this trial.");}});
+  window.addEventListener("blur",()=>{spaceHeld=false;interrupt("window_blur","The task window lost focus. This trial will be repeated.");});
+  window.addEventListener("resize",()=>{updateDeviceWarning();interrupt("window_resize","The window size changed. This trial will be repeated at the new size.");});
+  document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)interrupt("fullscreen_exit","Full screen ended during a trial. This trial will be repeated.");});
+  window.addEventListener("beforeunload",()=>{
+    if(attempt) interrupt("page_unload","The page was closed during an unfinished trial.");
+    persist();
+  });
+  $("start-button").addEventListener("click",newSession);
+  $("instruction-start-button").addEventListener("click",()=>ready());
+  $("begin-trial-button").addEventListener("click",begin);
+  $("next-practice-button").addEventListener("click",nextPractice);
+  $("continue-button").addEventListener("click",begin);
+  $("resume-trial-button").addEventListener("click",()=>{if(deviceOK())begin();else setText("pause-reason","Please enlarge the window to at least "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels before continuing.");});
+  $("resume-button").addEventListener("click",resumeStored);
+  $("discard-session-button").addEventListener("click",returnToWelcome);
+  $("restart-button").addEventListener("click",returnToWelcome);
+  document.querySelectorAll("[data-color]").forEach(b=>b.addEventListener("click",()=>reportColor(b.dataset.color)));
+  document.querySelectorAll("[data-letter]").forEach(b=>b.addEventListener("click",()=>reportLetter(b.dataset.letter)));
+  $("download-trials-button").addEventListener("click",()=>downloadCSV("trials"));
+  $("download-blocks-button").addEventListener("click",()=>downloadCSV("blocks"));
+  $("download-json-button").addEventListener("click",downloadJSON);
+  $("download-pending-button").addEventListener("click",downloadJSON);
+  $("retry-save-button").addEventListener("click",()=>flushAtBreak($("retry-save-button")));
+  $("retry-pending-button").addEventListener("click",()=>flushAtBreak($("retry-pending-button")));
+  $("class-code").value=C.CLASS_CODE||"";
+  uiReady=true;
+  session=load(activeKey,null);
+  if(session && (!session.schedule || !Array.isArray(session.trials) || !Array.isArray(session.queued_trial_ids))) session=null;
+  if(session) {
+    // Re-submit retained rows after a reload. The collector deduplicates by immutable
+    // record ID; this also repairs outbox/session writes interrupted between saves.
+    session.queued_trial_ids=[];session.queued_block_ids=[];persist();
+  }
+  $("resume-panel").hidden=!session;
+  $("recovered-data-panel").hidden=client.pendingCount()===0;
+  if(!client.isConfigured()) {
+    $("setup-notice").hidden=false;
+    setText("setup-notice","Preview mode: class collection is not connected yet. You can try the complete task and download your responses from this device.");
+    $("start-button").textContent="Try the demo";
+  }
+  setText("main-block-count",mainBlocks+" short block"+(mainBlocks===1?"":"s"));
+  setText("session-duration",mainBlocks===3?"5–7 min":mainBlocks===2?"4–6 min":"3–4 min");
+  setText("trial-count-copy","Begin with 6 practice trials and feedback, followed by "+(mainBlocks*12)+" main trials in "+mainBlocks+" block"+(mainBlocks===1?"":"s")+".");
+  setText("trial-progress","6 practice · "+(mainBlocks*12)+" main trials");
+  updateDeviceWarning();renderSaveStatus();
+})();
+  </script>
+</body>
+</html>

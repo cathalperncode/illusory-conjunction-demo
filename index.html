@@ -8,28 +8,29 @@
   <title>Illusory conjunctions · A perception experiment</title>
   <!-- SETUP: Paste your deployed Google Apps Script /exec URL into
        GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
-       For version 1.2.0, also replace Code.gs, run setup, and update the existing
-       Apps Script web-app deployment before collecting the new student fields. -->
+       If your collector predates version 1.2.0, replace Code.gs, run setup, and
+       update the existing Apps Script web-app deployment for the student fields.
+       Version 1.3.0 uses that same collector; this timing update only needs HTML. -->
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
   GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
-  TASK_VERSION: "1.2.0",
+  TASK_VERSION: "1.3.0",
   MAIN_BLOCKS: 1,
-  MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice or breaks.
+  MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice trials.
   OFFER_FULLSCREEN: true,
   STORAGE_PREFIX: "illusory-conjunction-v1",
   MIN_WIDTH: 900,
   MIN_HEIGHT: 650,
-  FIXATION_MS: 250,
+  FIXATION_MS: 1000,     // Visible central fixation cross before every digit stream.
   STREAM_MS: 2000,
   DIGIT_COUNT: 12,
   PERIPHERAL_ONSET_DIGIT: 4,  // One-based: 500 ms into the shortened stream.
   PERIPHERAL_DIGITS: 9,       // Nine digit intervals = 1500 ms.
   RESPONSE_WINDOW_MS: 500,
   GRACE_MS: 500,             // Preserves the response window for a zero in the final position.
-  REPORT_TIMEOUT_MS: 1500,   // One combined color-and-letter choice. Unanswered trials are flagged.
+  REPORT_TIMEOUT_MS: null,   // Self-paced combined color-and-letter choice; no deadline.
   DISTANCE_START: 0.27,      // Target horizontal offset as a fraction of canvas width.
   DISTANCE_MIN: 0.08,
   DISTANCE_MAX: 0.40,
@@ -317,16 +318,13 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
 
-/* A single joint report keeps the short demonstration moving. */
+/* A single choice records both the letter and its color. */
 .report-screen { padding-top: 12px; padding-bottom: 12px; }
-.report-topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.report-topline { display: flex; align-items: center; justify-content: center; margin-bottom: 9px; }
 .report-topline .eyebrow { margin: 0; }
-.report-timer { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .report-screen .report-card { width: min(610px, 100%); }
 .report-screen .report-card h1 { font-size: 26px; }
 .report-screen .focus-copy { margin: 10px auto 13px; font-size: 13px; }
-.report-time-track { height: 4px; background: #e1e6df; border-radius: 4px; margin: 0 0 14px; overflow: hidden; }
-#report-time-fill { width: 100%; height: 100%; background: var(--teal); }
 .conjunction-options { gap: 10px; }
 .report-button.conjunction-choice { min-height: 92px; padding: 9px 12px; gap: 3px; background: #121719; border-color: #3a4546; }
 .report-button.conjunction-choice:hover:not(:disabled), .report-button.conjunction-choice:focus-visible { background: #253034; border-color: #97aaa4; }
@@ -388,7 +386,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
           <p class="intro-copy">Watch the center. Catch the zeros. Then tell us what you saw at the edge.</p>
           <p class="intro-description">This experiment explores how we combine a letter and its color when our attention is occupied.</p>
           <dl class="session-facts">
-            <div><dt>Task duration</dt><dd id="session-duration">About 4:20 max</dd></div>
+            <div><dt>Response pace</dt><dd id="session-duration">Self-paced answers</dd></div>
             <div><dt>Trials</dt><dd id="practice-count">60 total trials</dd></div>
             <div><dt>Distance adjusts</dt><dd id="main-block-count">Every 10 trials</dd></div>
           </dl>
@@ -441,7 +439,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <article class="instruction-card">
           <span class="step-number" aria-hidden="true">01</span>
           <h2>Catch every zero</h2>
-          <p>Watch the stream of digits at the center. Press <kbd>Space</kbd> whenever you see <strong>0</strong>. Do not respond to the other digits.</p>
+          <p>Before each trial, look at the <strong>central + for one second</strong>. The digits then start automatically. Press <kbd>Space</kbd> whenever you see <strong>0</strong>. Do not respond to the other digits.</p>
           <p class="instruction-emphasis">Keep looking at the center throughout the display.</p>
         </article>
         <article class="instruction-card">
@@ -450,7 +448,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
           <p>A group of four letters briefly appears above or below, to the left or right of the center. <strong>One is T, X, or L; the other three are the letter O.</strong></p>
           <p>Keep looking at the center and remember <strong>which letter (T, X, or L)</strong> appeared and <strong>what color it was</strong>. Ignore the O’s, including the colored O.</p>
           <p>After the display disappears, <strong>nine answer buttons</strong> appear. Choose the button showing <strong>the same letter in the same color</strong>. One choice reports both.</p>
-          <p class="instruction-emphasis">You have 1.5 seconds once the answer buttons appear. Click the matching button or press the number printed on it. If unsure, give your best answer.</p>
+          <p class="instruction-emphasis">Answer at your own pace. Click the matching button or press the number printed on it. If unsure, give your best answer.</p>
         </article>
       </div>
 
@@ -469,7 +467,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <div><span class="key-guide-label">Green letters</span><span><kbd>4</kbd> T <kbd>5</kbd> X <kbd>6</kbd> L</span></div>
         <div><span class="key-guide-label">Blue letters</span><span><kbd>7</kbd> T <kbd>8</kbd> X <kbd>9</kbd> L</span></div>
       </div>
-      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">60 trials in sets of 10. Each report has a 1.5-second limit. Distance adjusts between sets, with a one-second feedback pause. There are no extra practice trials.</p><button id="instruction-start-button" type="button" class="button button-primary">I’m ready <span aria-hidden="true">→</span></button></div>
+      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">60 trials in sets of 10. Each trial begins with a one-second fixation cross. Answer at your own pace. Distance adjusts between sets, with a one-second feedback pause. There are no extra practice trials.</p><button id="instruction-start-button" type="button" class="button button-primary">I’m ready <span aria-hidden="true">→</span></button></div>
     </section>
 
     <section id="ready-screen" class="screen centered-screen" aria-labelledby="ready-title" tabindex="-1" hidden>
@@ -477,9 +475,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <p class="eyebrow">Ready when you are</p>
         <div class="focus-symbol" aria-hidden="true">+</div>
         <h1 id="ready-title">Ready for 60 trials?</h1>
-        <p id="ready-copy" class="focus-copy">Keep watching the center and press Space for each 0. Remember the T, X, or L off to the side and its color. When the answer buttons appear, choose that same letter in that same color within 1.5 seconds.</p>
+        <p id="ready-copy" class="focus-copy">Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.</p>
         <button id="begin-trial-button" type="button" class="button button-primary">Start demonstration <span aria-hidden="true">→</span></button>
-        <p class="field-hint">Place your thumb on Space. The trials run continuously for about 4 minutes 20 seconds at most, excluding interruptions.</p>
+        <p class="field-hint">Place your thumb on Space. After each answer, the fixation cross returns before the next trial.</p>
       </div>
     </section>
 
@@ -491,10 +489,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 
     <section id="report-screen" class="screen centered-screen report-screen" aria-labelledby="report-prompt" tabindex="-1" hidden>
       <div class="report-card">
-        <div class="report-topline"><p id="report-progress" class="eyebrow">Letter + color</p><span id="report-timer" class="report-timer" aria-label="Time remaining">1.5 s</span></div>
+        <div class="report-topline"><p id="report-progress" class="eyebrow">Letter + color · Self-paced</p></div>
         <h1 id="report-prompt" tabindex="-1">Which letter and color did you see?</h1>
-        <p id="report-hint" class="focus-copy">Match the T, X, or L you remember. Click its colored-letter button or press the number on it.</p>
-        <div class="report-time-track" aria-hidden="true"><div id="report-time-fill"></div></div>
+        <p id="report-hint" class="focus-copy">Choose at your own pace. Match the T, X, or L you remember by clicking its colored-letter button or pressing the number on it.</p>
         <div id="conjunction-options" class="report-options conjunction-options" role="group" aria-label="Choose the target letter and color">
           <button type="button" class="report-button conjunction-choice choice-red" data-choice="1" data-color="red" data-letter="T" aria-label="Red T, key 1"><span class="letter-glyph" aria-hidden="true">T</span><span class="choice-label">Red T</span><kbd>1</kbd></button>
           <button type="button" class="report-button conjunction-choice choice-red" data-choice="2" data-color="red" data-letter="X" aria-label="Red X, key 2"><span class="letter-glyph" aria-hidden="true">X</span><span class="choice-label">Red X</span><kbd>2</kbd></button>
@@ -1300,7 +1297,6 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   let runToken = 0;
   let spaceHeld = false;
   let reportStarted = 0;
-  let reportDeadline = 0;
   let feedbackStarted = 0;
   let storageFailed = false;
   let uploadPromise = null;
@@ -1333,11 +1329,6 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function percent(n) { return n === null || !Number.isFinite(n) ? "—" : Math.round(n*100)+"%"; }
   function configuredSchedule(seed) { return Core.createSchedule(seed); }
   function mainTaskDescription(schedule) { return schedule.main.length+" trials in sets of "+C.ADJUST_EVERY+", with distance adjusted between sets"; }
-  function durationEstimate(schedule) {
-    const pauses=Math.max(0,Math.ceil(schedule.main.length/C.ADJUST_EVERY)-1);
-    const seconds=Math.ceil((schedule.main.length*(C.FIXATION_MS+C.STREAM_MS+C.GRACE_MS+C.REPORT_TIMEOUT_MS)+pauses*C.ADJUST_PAUSE_MS)/1000);
-    return "About "+Math.floor(seconds/60)+":"+String(seconds%60).padStart(2,"0")+" max";
-  }
   function digitScoreText(hits,targets,rate) {
     return targets>0 ? hits+" / "+targets+" zeros detected ("+percent(rate)+")" :
       "No zeros appeared; hit rate is not applicable";
@@ -1498,7 +1489,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function ready(copy) {
     phaseState="ready";session.stage="ready";persist();show("ready-screen");
     setText("ready-title","Ready for "+(plans().length-session.cursor)+" trials?");
-    setText("ready-copy",copy || "Keep watching the center and press Space for each 0. Remember the T, X, or L off to the side and its color. When the answer buttons appear, choose that same letter in that same color within 1.5 seconds.");
+    setText("ready-copy",copy || "Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.");
     $("begin-trial-button").disabled=false;
   }
   async function begin() {
@@ -1553,7 +1544,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     const plan={...currentPlan(),distance:session.currentDistance};
     phaseState="fixation";session.stage="trial";show("task-screen");
     setText("task-caption","Watch the center · "+(session.cursor+1)+" / "+plans().length);
-    setText("task-note","Press Space whenever 0 appears. Keep your eyes at the center.");
+    setText("task-note","Look at the central +. The digits will start automatically.");
     const key=plan.phase+"-"+plan.planned_trial;
     const attemptNumber=(session.attempts[key]||0)+1;session.attempts[key]=attemptNumber;
     const digitSeed=(session.seed ^ Math.imul(plan.planned_trial+1,2654435761) ^ Math.imul(attemptNumber,2246822519) ^ (plan.phase==="main"?0x95a31:0))>>>0;
@@ -1584,6 +1575,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     if(a.streamStart===null) {
       if(now-a.fixationStart<C.FIXATION_MS) {frameHandle=requestAnimationFrame(t=>tick(t,token));return;}
       a.streamStart=now;a.lastFrame=now;phaseState="stream";
+      setText("task-note","Press Space whenever 0 appears. Keep your eyes at the center.");
     }
     const elapsed=now-a.streamStart;
     if(a.lastFrame!==null) {
@@ -1633,40 +1625,24 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     phaseState="report";session.stage="report";persist();
     show("report-screen");
     setText("report-prompt","Which letter and color did you see?");
-    setText("report-hint","Match the T, X, or L you remember. Click its colored-letter button or press the number on it.");
-    setText("report-progress","LETTER + COLOR");
-    reportStarted=performance.now();reportDeadline=reportStarted+C.REPORT_TIMEOUT_MS;
-    const token=attempt.token;
-    reportTick(reportStarted,token);
-  }
-  function reportTick(now,token) {
-    if(!attempt || attempt.token!==token || phaseState!=="report") return;
-    const remaining=Math.max(0,reportDeadline-now);
-    setText("report-timer",(remaining/1000).toFixed(1)+" s");
-    $("report-time-fill").style.width=(100*remaining/C.REPORT_TIMEOUT_MS)+"%";
-    if(remaining<=0) {finishReport(null);return;}
-    frameHandle=requestAnimationFrame(t=>reportTick(t,token));
+    setText("report-hint","Choose at your own pace. Match the T, X, or L you remember by clicking its colored-letter button or pressing the number on it.");
+    setText("report-progress","LETTER + COLOR · SELF-PACED");
+    // No timer or animation loop runs while the participant chooses a report.
+    reportStarted=performance.now();
   }
   function reportChoice(color,letter) {
     if(phaseState!=="report" || !attempt || !colors.includes(color) || !["T","X","L"].includes(letter)) return;
-    // A delayed timer must never allow a response after the declared deadline.
-    if(performance.now()>=reportDeadline) {finishReport(null);return;}
     finishReport({color,letter});
   }
   function finishReport(choice) {
-    if(phaseState!=="report" || !attempt) return;
+    if(phaseState!=="report" || !attempt || !choice) return;
     cancelAnimationFrame(frameHandle);
     const row=attempt.row;
-    if(choice) {
-      row.response_letter=choice.letter;row.response_color=choice.color;
-      row.color_rt_ms=row.letter_rt_ms=round(performance.now()-reportStarted);
-      row.letter_correct=choice.letter===row.target_letter;row.color_correct=choice.color===row.target_color;
-      row.response_category=Core.classify(row.target_letter,row.target_color,row.distractor_color,choice.letter,choice.color);
-      row.trial_status="complete";
-    } else {
-      row.response_letter=null;row.response_color=null;row.color_rt_ms=null;row.letter_rt_ms=null;
-      row.letter_correct=null;row.color_correct=null;row.response_category="incomplete";row.trial_status="timeout";
-    }
+    row.response_letter=choice.letter;row.response_color=choice.color;
+    row.color_rt_ms=row.letter_rt_ms=round(performance.now()-reportStarted);
+    row.letter_correct=choice.letter===row.target_letter;row.color_correct=choice.color===row.target_color;
+    row.response_category=Core.classify(row.target_letter,row.target_color,row.distractor_color,choice.letter,choice.color);
+    row.trial_status="complete";
     row.interruption_reason="";
     session.trials.push(row);session.cursor++;session.pendingAttempt=null;attempt=null;runToken++;
     if(session.cursor>=plans().length) {
@@ -1882,8 +1858,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   setText("practice-count",countSchedule.main.length+" total trials");
   setText("main-block-count","Every "+C.ADJUST_EVERY+" trials");
-  setText("session-duration",durationEstimate(countSchedule));
-  setText("trial-count-copy",mainTaskDescription(countSchedule)+". Each report has a 1.5-second limit. There are no extra practice trials. A one-second feedback pause separates each set.");
+  setText("session-duration","Self-paced answers");
+  setText("trial-count-copy",mainTaskDescription(countSchedule)+". Each trial begins with a one-second fixation cross. Answer at your own pace. There are no extra practice trials. A one-second feedback pause separates each set.");
   setText("trial-progress",countSchedule.main.length+" total trials");
   updateDeviceWarning();renderSaveStatus();
 })();

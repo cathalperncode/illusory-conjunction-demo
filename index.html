@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f4ee">
   <meta name="description" content="A classroom experiment in visual attention and feature binding.">
-  <title>Illusory conjunctions · A perception experiment</title>
+  <title>Illusory conjunctions · v1.4.1</title>
   <!-- SETUP: Paste your deployed Google Apps Script /exec URL into
        GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
        If your collector predates version 1.2.0, replace Code.gs, run setup, and
        update the existing Apps Script web-app deployment for the student fields.
-       Version 1.4.0 uses that same collector; this display update only needs HTML. -->
+       Version 1.4.1 uses that same collector; this display update only needs HTML. -->
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
   GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
-  TASK_VERSION: "1.4.0",
+  TASK_VERSION: "1.4.1",
   MAIN_BLOCKS: 1,
   MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice trials.
   OFFER_FULLSCREEN: true,
@@ -357,6 +357,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 @media (max-width: 560px) { .result-metrics, .name-fields { grid-template-columns: 1fr; } }
 
 /* The launcher has no running experiment or saved-session handlers. */
+.version-badge { display: inline-block; margin: 14px 0 12px; padding: 7px 12px; border: 1px solid #126b64; border-radius: 6px; background: #e0f0ec; color: #124d47; font-size: 14px; line-height: 1.35; font-weight: 650; letter-spacing: .2px; }
 .launcher-screen { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 40px 24px; }
 .launcher-card { width: min(680px, 100%); padding: clamp(28px, 5vw, 54px); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
 .launcher-card h1 { margin: 15px 0 22px; font-size: clamp(34px, 4vw, 48px); }
@@ -417,6 +418,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
   <section id="launcher-screen" class="launcher-screen" aria-labelledby="launcher-title">
     <div class="launcher-card">
       <p class="eyebrow">Perception / lab</p>
+      <p id="launcher-version" class="version-badge">Fullscreen display · v1.4.1</p>
       <h1 id="launcher-title">Illusory conjunctions</h1>
       <p class="launcher-copy">Open the experiment in a separate window, then enter your details and read the instructions. When you are ready, switch to full screen for the task.</p>
       <p class="launcher-facts">60 trials · Self-paced answers · Keyboard required</p>
@@ -459,6 +461,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
       <div class="welcome-grid">
         <div class="welcome-intro">
           <p class="eyebrow">Attention &amp; feature binding</p>
+          <p id="welcome-version" class="version-badge">Fullscreen display · v1.4.1</p>
           <h1 id="welcome-title">Illusory<br>conjunctions</h1>
           <p class="intro-copy">Watch the center. Catch the zeros. Then tell us what you saw at the edge.</p>
           <p class="intro-description">This experiment explores how we combine a letter and its color when our attention is occupied.</p>
@@ -550,6 +553,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
     <section id="ready-screen" class="screen centered-screen" aria-labelledby="ready-title" tabindex="-1" hidden>
       <div class="focus-card">
         <p class="eyebrow">Ready when you are</p>
+        <p id="ready-version" class="version-badge">Fullscreen display · v1.4.1</p>
         <div class="focus-symbol" aria-hidden="true">+</div>
         <h1 id="ready-title">Ready for 60 trials?</h1>
         <p id="ready-copy" class="focus-copy">A 3–2–1 countdown will give you time to look at the center before the first trial. Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.</p>
@@ -1374,12 +1378,24 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
   const C = window.IC_CONFIG;
   const $ = (id) => document.getElementById(id);
   const pageURL = new URL(window.location.href);
+  const buildLabel = "Fullscreen display · v" + C.TASK_VERSION;
+  document.title = "Illusory conjunctions · v" + C.TASK_VERSION;
+  ["launcher-version", "welcome-version", "ready-version"].forEach(id => {
+    const label = $(id); if(label) label.textContent = buildLabel;
+  });
   if(pageURL.searchParams.get("experiment")!=="1") {
     // The launcher never opens storage, constructs a data client, or installs
     // experiment handlers. Closing it cannot overwrite the child session.
     const experimentURL=new URL(pageURL.href);
     experimentURL.search="";experimentURL.hash="";
     experimentURL.searchParams.set("experiment","1");
+    experimentURL.searchParams.set("build",C.TASK_VERSION);
+    // Reuse only this page and configuration. A global window name could bring
+    // an older download (or a differently connected copy) back to the front.
+    const launchIdentity=pageURL.origin+pageURL.pathname+"\n"+JSON.stringify(C);
+    let launchHash=2166136261;
+    for(let i=0;i<launchIdentity.length;i++) launchHash=Math.imul(launchHash^launchIdentity.charCodeAt(i),16777619)>>>0;
+    const windowName="ICExperiment_"+C.TASK_VERSION.replace(/[^a-zA-Z0-9_-]/g,"_")+"_"+launchHash.toString(16);
     $("continue-here-link").href=experimentURL.href;
     let experimentWindow=null;
     function launch() {
@@ -1397,10 +1413,15 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
       try {
         // An empty URL lets an existing named experiment keep its document and
         // current trial. Only a newly created blank window is navigated.
-        experimentWindow=window.open("","ICExperimentWindow",features);
+        experimentWindow=window.open("",windowName,features);
         if(!experimentWindow || experimentWindow.closed) throw new Error("popup_blocked");
-        const existingURL=experimentWindow.location.href;
-        if(!existingURL || existingURL==="about:blank") experimentWindow.location.href=experimentURL.href;
+        let existingURL=null;
+        try { existingURL=experimentWindow.location.href; }
+        catch (_) {
+          // Some browsers isolate file: documents after navigation. The scoped
+          // name still identifies this build; focus it without restarting it.
+        }
+        if(existingURL==="" || existingURL==="about:blank") experimentWindow.location.href=experimentURL.href;
         experimentWindow.focus();
         $("launch-fallback").hidden=true;
         $("launch-status").textContent="The experiment window is open. Enter your details there, then choose Enter fullscreen and start. Your browser may open a tab instead, depending on its settings.";

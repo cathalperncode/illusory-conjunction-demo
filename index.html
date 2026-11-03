@@ -13,7 +13,7 @@
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
-  GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycby-efw2xpqzlIjn4IHY56NFx6q-yLncoxAU0a0tCaWkGsTHCAEVgoE7mUavYrkv1Xz7Vg/exec", // Paste the deployed Apps Script web-app URL ending in /exec.
+  GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
   TASK_VERSION: "1.2.0",
   MAIN_BLOCKS: 1,
@@ -433,8 +433,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     <section id="instructions-screen" class="screen instructions-screen" aria-labelledby="instructions-title" tabindex="-1" hidden>
       <div class="section-heading">
         <p class="eyebrow">How to take part</p>
-        <h1 id="instructions-title">Two tasks. Keep your eyes at the center.</h1>
-        <p>The center task comes first. A brief string of letters will also appear above or below, on either side.</p>
+        <h1 id="instructions-title">Two tasks at once. Keep your eyes at the center.</h1>
+        <p>While watching the central digits, also remember a letter that appears off to the side. You will answer about that letter after the display disappears.</p>
       </div>
 
       <div class="instruction-grid">
@@ -446,9 +446,11 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         </article>
         <article class="instruction-card">
           <span class="step-number" aria-hidden="true">02</span>
-          <h2>Report the peripheral target</h2>
-          <p>After the digits finish, choose the <strong>colored letter</strong> you saw. The target is always <strong>T, X, or L</strong>; the other characters are O.</p>
-          <p class="instruction-emphasis">You have 1.5 seconds: click one colored letter or press its number. If unsure, give your best answer.</p>
+          <h2>Remember the letter and its color</h2>
+          <p>A group of four letters briefly appears above or below, to the left or right of the center. <strong>One is T, X, or L; the other three are the letter O.</strong></p>
+          <p>Keep looking at the center and remember <strong>which letter (T, X, or L)</strong> appeared and <strong>what color it was</strong>. Ignore the O’s, including the colored O.</p>
+          <p>After the display disappears, <strong>nine answer buttons</strong> appear. Choose the button showing <strong>the same letter in the same color</strong>. One choice reports both.</p>
+          <p class="instruction-emphasis">You have 1.5 seconds once the answer buttons appear. Click the matching button or press the number printed on it. If unsure, give your best answer.</p>
         </article>
       </div>
 
@@ -458,7 +460,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
           <span class="example-string" aria-hidden="true"><span class="example-white">O</span><span class="example-red">T</span><span class="example-green">O</span><span class="example-white">O</span></span>
           <span class="example-caption" aria-hidden="true">Example display</span>
         </div>
-        <figcaption>Here, press <kbd>Space</kbd> for the central 0. After the display, choose <strong>red T</strong> (key <kbd>1</kbd>).</figcaption>
+        <figcaption><strong>Example: remember the red T.</strong> The green O is a distractor. Press <kbd>Space</kbd> for the central 0.<br>After the display disappears, choose the <strong>red T</strong> button, or press its number, <kbd>1</kbd>.</figcaption>
       </figure>
 
       <div class="key-guide" aria-label="Response keys">
@@ -475,7 +477,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <p class="eyebrow">Ready when you are</p>
         <div class="focus-symbol" aria-hidden="true">+</div>
         <h1 id="ready-title">Ready for 60 trials?</h1>
-        <p id="ready-copy" class="focus-copy">Watch the center and press Space each time 0 appears. Then choose the colored target letter within 1.5 seconds.</p>
+        <p id="ready-copy" class="focus-copy">Keep watching the center and press Space for each 0. Remember the T, X, or L off to the side and its color. When the answer buttons appear, choose that same letter in that same color within 1.5 seconds.</p>
         <button id="begin-trial-button" type="button" class="button button-primary">Start demonstration <span aria-hidden="true">→</span></button>
         <p class="field-hint">Place your thumb on Space. The trials run continuously for about 4 minutes 20 seconds at most, excluding interruptions.</p>
       </div>
@@ -490,8 +492,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     <section id="report-screen" class="screen centered-screen report-screen" aria-labelledby="report-prompt" tabindex="-1" hidden>
       <div class="report-card">
         <div class="report-topline"><p id="report-progress" class="eyebrow">Letter + color</p><span id="report-timer" class="report-timer" aria-label="Time remaining">1.5 s</span></div>
-        <h1 id="report-prompt" tabindex="-1">Which colored letter did you see?</h1>
-        <p id="report-hint" class="focus-copy">Click one choice or press its number. Choose your best answer.</p>
+        <h1 id="report-prompt" tabindex="-1">Which letter and color did you see?</h1>
+        <p id="report-hint" class="focus-copy">Match the T, X, or L you remember. Click its colored-letter button or press the number on it.</p>
         <div class="report-time-track" aria-hidden="true"><div id="report-time-fill"></div></div>
         <div id="conjunction-options" class="report-options conjunction-options" role="group" aria-label="Choose the target letter and color">
           <button type="button" class="report-button conjunction-choice choice-red" data-choice="1" data-color="red" data-letter="T" aria-label="Red T, key 1"><span class="letter-glyph" aria-hidden="true">T</span><span class="choice-label">Red T</span><kbd>1</kbd></button>
@@ -1496,7 +1498,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function ready(copy) {
     phaseState="ready";session.stage="ready";persist();show("ready-screen");
     setText("ready-title","Ready for "+(plans().length-session.cursor)+" trials?");
-    setText("ready-copy",copy || "Keep looking at the center. Press Space for every 0. Then choose the colored target letter within 1.5 seconds.");
+    setText("ready-copy",copy || "Keep watching the center and press Space for each 0. Remember the T, X, or L off to the side and its color. When the answer buttons appear, choose that same letter in that same color within 1.5 seconds.");
     $("begin-trial-button").disabled=false;
   }
   async function begin() {
@@ -1630,8 +1632,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     cancelAnimationFrame(frameHandle);finalizeMetrics();
     phaseState="report";session.stage="report";persist();
     show("report-screen");
-    setText("report-prompt","Which colored letter did you see?");
-    setText("report-hint","Click one choice or press its number. Choose your best answer.");
+    setText("report-prompt","Which letter and color did you see?");
+    setText("report-hint","Match the T, X, or L you remember. Click its colored-letter button or press the number on it.");
     setText("report-progress","LETTER + COLOR");
     reportStarted=performance.now();reportDeadline=reportStarted+C.REPORT_TIMEOUT_MS;
     const token=attempt.token;

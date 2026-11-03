@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f4ee">
   <meta name="description" content="A classroom experiment in visual attention and feature binding.">
-  <title>Illusory conjunctions · v1.4.1</title>
+  <title>Illusory conjunctions · v1.4.2</title>
   <!-- SETUP: Paste your deployed Google Apps Script /exec URL into
        GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
-       If your collector predates version 1.2.0, replace Code.gs, run setup, and
-       update the existing Apps Script web-app deployment for the student fields.
-       Version 1.4.1 uses that same collector; this display update only needs HTML. -->
+       For this 1.4.2 save-confirmation repair, also replace Code.gs and deploy a
+       New version of the existing web app, keeping its /exec URL. Existing
+       1.2.0-or-newer collectors need no setup or column changes. If upgrading
+       an older collector, run setup once to append the student fields. -->
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
   GOOGLE_SCRIPT_URL: "https://script.google.com/macros/s/AKfycby-efw2xpqzlIjn4IHY56NFx6q-yLncoxAU0a0tCaWkGsTHCAEVgoE7mUavYrkv1Xz7Vg/exec", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
-  TASK_VERSION: "1.4.1",
+  TASK_VERSION: "1.4.2",
   MAIN_BLOCKS: 1,
   MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice trials.
   OFFER_FULLSCREEN: true,
@@ -418,7 +419,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
   <section id="launcher-screen" class="launcher-screen" aria-labelledby="launcher-title">
     <div class="launcher-card">
       <p class="eyebrow">Perception / lab</p>
-      <p id="launcher-version" class="version-badge">Fullscreen display · v1.4.1</p>
+      <p id="launcher-version" class="version-badge">Fullscreen display · v1.4.2</p>
       <h1 id="launcher-title">Illusory conjunctions</h1>
       <p class="launcher-copy">Open the experiment in a separate window, then enter your details and read the instructions. When you are ready, switch to full screen for the task.</p>
       <p class="launcher-facts">60 trials · Self-paced answers · Keyboard required</p>
@@ -461,7 +462,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
       <div class="welcome-grid">
         <div class="welcome-intro">
           <p class="eyebrow">Attention &amp; feature binding</p>
-          <p id="welcome-version" class="version-badge">Fullscreen display · v1.4.1</p>
+          <p id="welcome-version" class="version-badge">Fullscreen display · v1.4.2</p>
           <h1 id="welcome-title">Illusory<br>conjunctions</h1>
           <p class="intro-copy">Watch the center. Catch the zeros. Then tell us what you saw at the edge.</p>
           <p class="intro-description">This experiment explores how we combine a letter and its color when our attention is occupied.</p>
@@ -553,7 +554,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
     <section id="ready-screen" class="screen centered-screen" aria-labelledby="ready-title" tabindex="-1" hidden>
       <div class="focus-card">
         <p class="eyebrow">Ready when you are</p>
-        <p id="ready-version" class="version-badge">Fullscreen display · v1.4.1</p>
+        <p id="ready-version" class="version-badge">Fullscreen display · v1.4.2</p>
         <div class="focus-symbol" aria-hidden="true">+</div>
         <h1 id="ready-title">Ready for 60 trials?</h1>
         <p id="ready-copy" class="focus-copy">A 3–2–1 countdown will give you time to look at the center before the first trial. Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.</p>
@@ -1072,9 +1073,9 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
   var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var MAX_SEND_ATTEMPTS = 2;
   var RECEIPT_DELAYS = [0, 700, 1600];
-  var POST_TIMEOUT_MS = 8000;
-  var JSONP_TIMEOUT_MS = 6000;
-  var FLUSH_BUDGET_MS = 20000;
+  var POST_TIMEOUT_MS = 15000;
+  var JSONP_TIMEOUT_MS = 12000;
+  var FLUSH_BUDGET_MS = 45000;
   var callbackCounter = 0;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -1135,7 +1136,8 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
   /**
    * pendingCount() counts batches. pendingRecords() returns exportable envelopes
    * with endpoint and queued_at_utc metadata. POST bodies omit that metadata.
-   * flush() is explicit: call and await it only between timed trials/blocks.
+   * flush({session_id}) optionally prioritizes one run. It is explicit: call
+   * and await it only between timed trials/blocks or on the results screen.
    */
   function ICDataClient(options) {
     options = options || {};
@@ -1319,19 +1321,25 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
     }
     return false;
   };
-  ICDataClient.prototype.flush = function () {
+  ICDataClient.prototype.flush = function (options) {
     if (this._flushPromise) return this._flushPromise;
     var self = this;
-    this._flushPromise = this._flush().finally(function () { self._flushPromise = null; });
+    this._flushPromise = this._flush(options).finally(function () { self._flushPromise = null; });
     return this._flushPromise;
   };
-  ICDataClient.prototype._flush = async function () {
+  ICDataClient.prototype._flush = async function (options) {
     this._persist();
     if (!this.isConfigured()) {
       this._notify('local', 'Local mode: uploads are paused until a valid collector is configured. Existing batches retain their original destination.');
       return;
     }
     var candidates = this._batches.filter(function (batch) { return batch.endpoint === this.endpoint; }, this);
+    // A previous failed run must not consume the current participant's entire
+    // confirmation budget. Original collector destinations stay immutable.
+    if(options && typeof options.session_id === 'string') {
+      candidates=candidates.filter(function (batch) { return batch.envelope.session_id===options.session_id; })
+        .concat(candidates.filter(function (batch) { return batch.envelope.session_id!==options.session_id; }));
+    }
     if (!candidates.length) {
       this._notify(this.pendingCount() ? 'pending' : 'saved', this.pendingCount()
         ? 'Pending data belongs to another collector or to local mode. It has not been sent to this destination; use the pending-data download.'
@@ -1349,6 +1357,9 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
         this._acknowledged.add(batch.envelope.batch_id);
         this._batches = this._batches.filter(function (item) { return item.envelope.batch_id !== batch.envelope.batch_id; });
         this._persist();
+        // Update the completed run immediately, even if an older batch later
+        // uses the remaining time budget while waiting for its own receipt.
+        this._notify('saving', 'Collector receipt confirmed; checking remaining batches…');
       } else {
         anyFailure = true;
         // Do not make every queued batch wait through a disconnected network.
@@ -1545,22 +1556,42 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
   }
   function renderSaveStatus() {
     let label="",detail="";
+    const pending=client.pendingRecords();
+    const endpoint=String(C.GOOGLE_SCRIPT_URL||"").trim();
+    const currentPending=session ? pending.filter(batch=>batch.session_id===session.id && batch.endpoint===endpoint) : [];
+    const hasSessionData=Boolean(session && (session.trials.length || session.blocks.length));
+    const unrelatedPending=pending.length-currentPending.length;
     if(storageFailed || client.storageAvailable === false) {
       label="Download a backup";
       detail="This browser could not save a local recovery copy. Keep this page open and download your data before leaving.";
     } else if(!client.isConfigured()) {
       label="Preview · local data only";
       detail="Google Sheets is not connected. Your responses are on this device; use the download buttons to keep a copy.";
-    } else if(syncStatus.state === "saving") {
-      label="Saving…"; detail="Waiting for Google Sheets to confirm this save. Please keep the page open.";
-    } else if(client.pendingCount()>0) {
-      label="Save pending";
-      detail="Some data have not been confirmed by Google Sheets. They are retained on this device. Retry saving or download a backup.";
-    } else if(session && (session.trials.length || session.blocks.length)) {
+    } else if(hasSessionData && !sameCollector()) {
+      label="Earlier collector";
+      detail="This saved run belongs to its original collector. Restore that collector URL to retry, or download the local backup.";
+    } else if(hasSessionData) {
       const unqueued=session.trials.some(r=>!session.queued_trial_ids.includes(r.record_id)) ||
         session.blocks.some(r=>!session.queued_block_ids.includes(r.record_id));
-      label=unqueued ? "Saved on this device" : "Save confirmed";
-      detail=unqueued ? "Your responses are saved on this device. They will be sent when the demonstration ends." : "Google Sheets confirmed all queued data.";
+      if(currentPending.length) {
+        label=syncStatus.state === "saving" ? "Saving…" : "Save pending";
+        detail=syncStatus.state === "saving" ?
+          "Waiting for Google Sheets to confirm this run ("+currentPending.length+" batch"+(currentPending.length===1?"":"es")+" remaining). This can take up to 45 seconds. Please keep the page open." :
+          "This run still has "+currentPending.length+" unconfirmed batch"+(currentPending.length===1?"":"es")+". Rows may already be in Sheets, but confirmation is incomplete. Retry saving or download a backup; you do not need to repeat the task.";
+      } else if(unqueued) {
+        label="Saved on this device";
+        detail="Your responses are saved on this device. They will be sent when the demonstration ends.";
+      } else {
+        label="Save confirmed";
+        detail="Google Sheets confirmed every queued record for this run.";
+      }
+      if(unrelatedPending) detail+=" Earlier preview or other-run data remain on this device and are included in the local backup.";
+    } else if(syncStatus.state === "saving") {
+      label="Saving earlier data…";
+      detail="Checking confirmations for earlier runs. This can take up to 45 seconds.";
+    } else if(pending.length) {
+      label="Earlier data on this device";
+      detail="Earlier runs are retained in the local backup. Retry saving to their configured collector, or download the backup. Preview runs remain local.";
     } else if(collectorReachable === false) {
       label="Collector unavailable";
       detail="The class collector did not respond. Your responses will be kept on this device and saving will be retried when the demonstration ends.";
@@ -1569,7 +1600,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
     }
     if(syncStatus.message && /memory|storage|quota/i.test(syncStatus.message)) detail += " "+syncStatus.message;
     setText("save-status",label); setText("save-detail",detail);
-    $("save-status").dataset.state=storageFailed || client.storageAvailable === false ? "error" : syncStatus.state;
+    $("save-status").dataset.state=storageFailed || client.storageAvailable === false ? "error" : label==="Save confirmed" ? "saved" : syncStatus.state;
   }
   function deviceOK() { return innerWidth>=C.MIN_WIDTH && innerHeight>=C.MIN_HEIGHT; }
   function updateDeviceWarning() {
@@ -1601,7 +1632,7 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
     queueUnsent();
     if(!client.isConfigured()) return Promise.resolve();
     if(button) button.disabled=true;
-    uploadPromise=Promise.resolve().then(()=>client.flush()).catch(err=>{
+    uploadPromise=Promise.resolve().then(()=>client.flush({session_id:session?session.id:null})).catch(err=>{
       syncStatus={state:"pending",pending:client.pendingCount(),message:String(err.message||err)};
     }).finally(()=>{
       uploadPromise=null; if(button) button.disabled=false; renderSaveStatus();
@@ -2024,7 +2055,12 @@ body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: 
       "PERIPHERAL_ONSET_DIGIT","PERIPHERAL_DIGITS","RESPONSE_WINDOW_MS","GRACE_MS","REPORT_TIMEOUT_MS",
       "MAIN_TRIALS","DISTANCE_START","DISTANCE_MIN","DISTANCE_MAX","DISTANCE_STEP","ADJUST_EVERY","ADJUST_PAUSE_MS",
       "FRAME_WARNING_MS","FRAME_ABORT_MS","TASK_BACKGROUND","COLORS"];
-    return saved && sameCollector() && keys.every(key=>JSON.stringify(saved[key])===JSON.stringify(C[key]));
+    return saved && sameCollector() && keys.every(key=>{
+      // 1.4.2 repairs saving only. An otherwise identical 1.4.1 run keeps its
+      // original records/version and can reach results or retry without a redo.
+      if(key==="TASK_VERSION" && saved[key]==="1.4.1" && C[key]==="1.4.2") return true;
+      return JSON.stringify(saved[key])===JSON.stringify(C[key]);
+    });
   }
   function sameCollector() {
     return session && session.config_snapshot &&

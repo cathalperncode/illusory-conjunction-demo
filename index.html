@@ -10,16 +10,17 @@
        GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
        If your collector predates version 1.2.0, replace Code.gs, run setup, and
        update the existing Apps Script web-app deployment for the student fields.
-       Version 1.3.1 uses that same collector; this timing update only needs HTML. -->
+       Version 1.4.0 uses that same collector; this display update only needs HTML. -->
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
   GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
-  TASK_VERSION: "1.3.1",
+  TASK_VERSION: "1.4.0",
   MAIN_BLOCKS: 1,
   MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice trials.
   OFFER_FULLSCREEN: true,
+  TASK_BACKGROUND: "#808080", // Medium gray fills the task viewport and answer screen.
   STORAGE_PREFIX: "illusory-conjunction-v1",
   MIN_WIDTH: 900,
   MIN_HEIGHT: 650,
@@ -55,6 +56,7 @@ window.IC_CONFIG = Object.freeze({
   --orange: #c9703b;
   --line: #dedfd6;
   --stage-height: 460px;
+  --task-background: #808080;
   color-scheme: light;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   color: var(--ink);
@@ -353,9 +355,81 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .feedback-distance { margin-top: 10px; font-size: 16px; color: var(--teal); }
 .feedback-countdown { margin-top: 15px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 560px) { .result-metrics, .name-fields { grid-template-columns: 1fr; } }
+
+/* The launcher has no running experiment or saved-session handlers. */
+.launcher-screen { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 40px 24px; }
+.launcher-card { width: min(680px, 100%); padding: clamp(28px, 5vw, 54px); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.launcher-card h1 { margin: 15px 0 22px; font-size: clamp(34px, 4vw, 48px); }
+.launcher-copy { color: #4e626b; font-size: 17px; }
+.launcher-facts { margin: 25px 0 20px; color: var(--muted); font-size: 13px; }
+.launcher-card > .button { min-height: 54px; font-size: 15px; }
+#launch-status { margin-top: 20px; font-size: 12px; }
+.launch-fallback { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.fullscreen-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.example-stage { background: var(--task-background); }
+.example-caption { color: #fff; }
+
+/* The active display is the browser viewport itself, including in the explicit
+   windowed fallback. Browser full screen expands this to the physical screen. */
+body.experiment-active { width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: var(--task-background); }
+.experiment-active .site-header,
+.experiment-active .site-footer,
+.experiment-active .skip-link,
+.experiment-active #device-warning { display: none; }
+.experiment-active .main-content { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; min-height: 0; max-width: none; margin: 0; padding: 0; background: var(--task-background); }
+.experiment-active .screen { width: 100%; min-height: 100%; }
+.stimulus-active #task-screen { position: absolute; inset: 0; height: 100%; padding: 0; }
+.stimulus-active .stimulus-stage,
+.stimulus-active #stimulus-canvas { width: 100vw; height: 100vh; height: 100dvh; max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; background: var(--task-background); }
+.stimulus-active .task-heading,
+.stimulus-active .task-note { display: none; }
+.stimulus-active #task-screen[data-preparing="true"] .task-heading { display: flex; justify-content: center; position: fixed; z-index: 1; top: calc(50% - 130px); left: 0; width: 100%; min-height: 0; margin: 0; pointer-events: none; }
+.stimulus-active #task-screen[data-preparing="true"] .task-heading h1 { color: #fff; font-size: clamp(24px, 3vw, 32px); line-height: 1.2; font-weight: 500; }
+.stimulus-active #task-screen[data-preparing="true"] .task-key-reminder { display: none; }
+
+.experiment-active .report-screen { height: 100vh; height: 100dvh; min-height: 0; padding: 22px 4vw; }
+.experiment-active .report-screen .report-card { width: min(1120px, 92vw); }
+.experiment-active .report-topline { margin-bottom: 10px; }
+.experiment-active .report-topline .eyebrow { color: #fff; font-size: 12px; }
+.experiment-active .report-screen .report-card h1 { color: #fff; font-size: clamp(28px, 3.3vw, 42px); letter-spacing: -.7px; }
+.experiment-active .report-screen .focus-copy { max-width: 800px; margin: 12px auto 20px; color: #fff; font-size: clamp(14px, 1.4vw, 17px); line-height: 1.45; }
+.experiment-active .conjunction-options { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); height: 66vh; height: 66dvh; max-height: 720px; gap: clamp(10px, 1.5vw, 20px); }
+.experiment-active .report-button.conjunction-choice { min-height: 0; padding: 12px 16px; gap: 6px; border: 2px solid #111; border-radius: 12px; background: #000; }
+.experiment-active .report-button.conjunction-choice:hover:not(:disabled),
+.experiment-active .report-button.conjunction-choice:focus-visible { background: #151515; border-color: #fff; }
+.experiment-active .conjunction-choice .letter-glyph { font-size: clamp(48px, 7.1vh, 64px); font-weight: 500; }
+.experiment-active .conjunction-choice .choice-label { color: #fff; font-size: 13px; }
+.experiment-active .conjunction-choice kbd { min-height: 23px; min-width: 29px; color: #fff; border-color: #888; font-size: 13px; }
+.experiment-active #feedback-screen { height: 100vh; height: 100dvh; padding: 32px; color: #fff; }
+.experiment-active .feedback-card { width: min(820px, 100%); }
+.experiment-active .feedback-card .eyebrow,
+.experiment-active .feedback-card .focus-copy,
+.experiment-active .feedback-distance,
+.experiment-active .feedback-countdown { color: #fff; }
+.experiment-active .feedback-card h1 { font-size: clamp(30px, 4vw, 46px); }
+.experiment-active .feedback-card .focus-copy { max-width: 720px; font-size: 21px; }
+.experiment-active .feedback-detail { max-width: 700px; background: transparent; color: #fff; font-size: 17px; }
+.experiment-active .feedback-distance { font-size: 21px; }
+.experiment-active .feedback-countdown { font-size: 15px; }
   </style>
 </head>
 <body>
+  <section id="launcher-screen" class="launcher-screen" aria-labelledby="launcher-title">
+    <div class="launcher-card">
+      <p class="eyebrow">Perception / lab</p>
+      <h1 id="launcher-title">Illusory conjunctions</h1>
+      <p class="launcher-copy">Open the experiment in a separate window, then enter your details and read the instructions. When you are ready, switch to full screen for the task.</p>
+      <p class="launcher-facts">60 trials · Self-paced answers · Keyboard required</p>
+      <button id="open-experiment-button" type="button" class="button button-primary">Open experiment window <span aria-hidden="true">↗</span></button>
+      <p id="launch-status" class="field-hint" role="status" aria-live="polite">Your browser may choose a tab instead of a separate window. You can still enter full screen from the experiment.</p>
+      <div id="launch-fallback" class="launch-fallback" hidden>
+        <a id="continue-here-link" class="button button-secondary" href="?experiment=1">Continue in this window</a>
+        <p class="field-hint">Use this option if your browser does not allow the experiment window.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="experiment-shell" hidden>
   <a class="skip-link" href="#main-content">Skip to the experiment</a>
 
   <header class="site-header">
@@ -435,7 +509,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       <div class="section-heading">
         <p class="eyebrow">How to take part</p>
         <h1 id="instructions-title">Two tasks at once. Keep your eyes at the center.</h1>
-        <p>While watching the central digits, also remember a letter that appears off to the side. You will answer about that letter after the display disappears.</p>
+        <p>While watching the central digits, also remember a letter that appears off to the side. You will answer about that letter after the display disappears. The task fills the screen with a gray background.</p>
       </div>
 
       <div class="instruction-grid">
@@ -479,8 +553,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <div class="focus-symbol" aria-hidden="true">+</div>
         <h1 id="ready-title">Ready for 60 trials?</h1>
         <p id="ready-copy" class="focus-copy">A 3–2–1 countdown will give you time to look at the center before the first trial. Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.</p>
-        <button id="begin-trial-button" type="button" class="button button-primary">Start countdown <span aria-hidden="true">→</span></button>
-        <p class="field-hint">Place your thumb on Space, then start the countdown. After each answer, the fixation cross returns before the next trial.</p>
+        <button id="begin-trial-button" type="button" class="button button-primary">Enter fullscreen and start <span aria-hidden="true">→</span></button>
+        <p class="field-hint">Place your thumb on Space, then enter full screen. A 3–2–1 countdown gives you time to find the center. After each answer, the fixation cross returns before the next trial.</p>
       </div>
     </section>
 
@@ -561,6 +635,16 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       <p id="pause-reason">The display was interrupted. Return to the experiment, then restart this trial.</p>
       <button id="resume-trial-button" type="button" class="button button-primary">Continue demonstration <span aria-hidden="true">→</span></button>
     </div>
+  </div>
+
+  <div id="fullscreen-overlay" class="pause-overlay" role="dialog" aria-modal="true" aria-labelledby="fullscreen-title" aria-describedby="fullscreen-message" hidden>
+    <div class="pause-card">
+      <p class="eyebrow">Choose how to continue</p>
+      <h1 id="fullscreen-title">Full screen is unavailable</h1>
+      <p id="fullscreen-message">Try full screen again, or enlarge this browser window and continue here.</p>
+      <div class="fullscreen-actions"><button id="retry-fullscreen-button" type="button" class="button button-primary">Try full screen again</button><button id="continue-windowed-button" type="button" class="button button-secondary">Continue in this window</button></div>
+    </div>
+  </div>
   </div>
 
   <noscript><div class="noscript-notice">JavaScript is required for this experiment. Enable JavaScript in your browser and reload the page.</div></noscript>
@@ -812,7 +896,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 
   function geometry(width, height, distance, quadrant, targetPosition) {
     if (!Number.isFinite(width) || !Number.isFinite(height) || width < 122 || height < 64) {
-      throw new RangeError("The canvas is too small for the fixed-size stimuli.");
+      throw new RangeError("The canvas is too small for the stimuli.");
     }
     var numericDistance = typeof distance === "number";
     if ((numericDistance ? !Number.isFinite(distance) || distance < 0 : DISTANCES.indexOf(distance) === -1) ||
@@ -820,7 +904,16 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         (targetPosition !== "left" && targetPosition !== "right")) {
       throw new RangeError("Invalid distance, quadrant, or target position.");
     }
-    if (numericDistance && width < 152) throw new RangeError("The canvas is too small for target-centered stimuli.");
+    // The current adaptive task scales to the full viewport. Use both axes so
+    // a tall, narrow window does not produce oversized or clipped letter arrays.
+    // Named distances retain their legacy fixed-size geometry for old analyses.
+    var letterSize = numericDistance ? Math.round(Math.max(48, Math.min(84, Math.min(width / 1440, height / 900) * 64))) : 32;
+    var digitSize = numericDistance ? Math.round(letterSize * 0.75) : 24;
+    var spacing = numericDistance ? letterSize * 0.95 : 30;
+    var margin = numericDistance ? 2 * spacing + letterSize / 2 + 4 : 61;
+    if (numericDistance && (width < 2 * margin || height < letterSize / 0.6)) {
+      throw new RangeError("The canvas is too small for target-centered stimuli.");
+    }
     var factors = { near: 0.17, middle: 0.27, far: 0.37 };
     var centerX = width / 2;
     var centerY = height / 2;
@@ -828,18 +921,16 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     var ySign = quadrant.indexOf("upper") !== -1 ? -1 : 1;
     var targetIndex = targetPosition === "left" ? 1 : 2;
     var factor = numericDistance ? distance : factors[distance];
-    // Numeric distances control the actual target center, independent of which
-    // inner position contains it. The farthest flanker is 60 px from the target;
-    // a common 76 px margin includes a conservative 16 px half-glyph. A common
-    // bound prevents the target side from changing effective eccentricity.
-    // Legacy distance names still control the string center with a 61 px margin.
-    var margin = numericDistance ? 76 : 61;
+    // Numeric distances control the target center, independent of which inner
+    // position contains it. The farthest flanker is two spacings away. The
+    // common bound includes half a glyph plus a 4 px inset and prevents target
+    // position or quadrant from changing the effective eccentricity.
     var offsetX = Math.min(width * factor, Math.max(0, width / 2 - margin));
-    var stringX = centerX + xSign * offsetX - (numericDistance ? (targetIndex === 1 ? -15 : 15) : 0);
-    var stringY = centerY + ySign * height * 0.25;
-    var positions = [-45, -15, 15, 45].map(function (offset, index) {
+    var stringX = centerX + xSign * offsetX - (numericDistance ? (targetIndex === 1 ? -0.5 : 0.5) * spacing : 0);
+    var stringY = centerY + ySign * height * (numericDistance ? 0.20 : 0.25);
+    var positions = [-1.5, -0.5, 0.5, 1.5].map(function (offset, index) {
       return {
-        x: stringX + offset,
+        x: stringX + offset * spacing,
         y: stringY,
         role: index === 0 || index === 3 ? "flank" : (index === targetIndex ? "target" : "distractor")
       };
@@ -849,8 +940,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     return {
       center_x: centerX,
       center_y: centerY,
-      letter_font_px: 32,
-      digit_font_px: 24,
+      letter_font_px: letterSize,
+      digit_font_px: digitSize,
       used_distance: offsetX === width * factor ? factor : offsetX / width,
       string_center_x: stringX,
       string_center_y: stringY,
@@ -1281,8 +1372,52 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 (function () {
   "use strict";
   const C = window.IC_CONFIG;
-  const Core = window.ICCore;
   const $ = (id) => document.getElementById(id);
+  const pageURL = new URL(window.location.href);
+  if(pageURL.searchParams.get("experiment")!=="1") {
+    // The launcher never opens storage, constructs a data client, or installs
+    // experiment handlers. Closing it cannot overwrite the child session.
+    const experimentURL=new URL(pageURL.href);
+    experimentURL.search="";experimentURL.hash="";
+    experimentURL.searchParams.set("experiment","1");
+    $("continue-here-link").href=experimentURL.href;
+    let experimentWindow=null;
+    function launch() {
+      if(experimentWindow && !experimentWindow.closed) {
+        experimentWindow.focus();
+        $("launch-status").textContent="Your experiment is already open. Return to that window to continue.";
+        return;
+      }
+      const display=window.screen||{};
+      const width=Math.max(C.MIN_WIDTH,Math.floor(display.availWidth||innerWidth));
+      const height=Math.max(C.MIN_HEIGHT,Math.floor(display.availHeight||innerHeight));
+      const left=Number.isFinite(display.availLeft)?Math.round(display.availLeft):0;
+      const top=Number.isFinite(display.availTop)?Math.round(display.availTop):0;
+      const features="popup=yes,width="+width+",height="+height+",left="+left+",top="+top;
+      try {
+        // An empty URL lets an existing named experiment keep its document and
+        // current trial. Only a newly created blank window is navigated.
+        experimentWindow=window.open("","ICExperimentWindow",features);
+        if(!experimentWindow || experimentWindow.closed) throw new Error("popup_blocked");
+        const existingURL=experimentWindow.location.href;
+        if(!existingURL || existingURL==="about:blank") experimentWindow.location.href=experimentURL.href;
+        experimentWindow.focus();
+        $("launch-fallback").hidden=true;
+        $("launch-status").textContent="The experiment window is open. Enter your details there, then choose Enter fullscreen and start. Your browser may open a tab instead, depending on its settings.";
+        $("open-experiment-button").textContent="Return to experiment window";
+      } catch (_) {
+        experimentWindow=null;
+        $("launch-status").textContent="The experiment window could not be opened. Allow pop-ups for this page and try again, or continue in this window below.";
+        $("launch-fallback").hidden=false;
+      }
+    }
+    $("open-experiment-button").addEventListener("click",launch);
+    return;
+  }
+  $("launcher-screen").hidden=true;
+  $("experiment-shell").hidden=false;
+  document.documentElement.style.setProperty("--task-background",C.TASK_BACKGROUND);
+  const Core = window.ICCore;
   const activeKey = C.STORAGE_PREFIX + ":active";
   const archiveKey = C.STORAGE_PREFIX + ":archive";
   const digitDuration = C.STREAM_MS / C.DIGIT_COUNT;
@@ -1363,7 +1498,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     screens.forEach(el => { el.hidden = el.id !== screen; });
     $("pause-overlay").hidden = true;
     $("main-content").inert = false;
-    document.body.classList.toggle("experiment-active",screen === "task-screen");
+    $("fullscreen-overlay").hidden=true;
+    document.body.classList.toggle("experiment-active",["task-screen","report-screen","feedback-screen"].includes(screen));
+    document.body.classList.toggle("stimulus-active",screen === "task-screen");
     if(typeof window.scrollTo === "function") window.scrollTo({top:0,left:0,behavior:"instant"});
     const visible=$(screen);
     if(visible && typeof visible.focus === "function") visible.focus({preventScroll:true});
@@ -1497,25 +1634,46 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     setText("ready-title","Ready for "+(plans().length-session.cursor)+" trials?");
     const opening=session.startCountdownComplete ? "" : "A 3–2–1 countdown will give you time to look at the center before the first trial. ";
     setText("ready-copy",copy || opening+"Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.");
-    setText("begin-trial-button",session.startCountdownComplete ? "Continue demonstration" : "Start countdown");
+    setText("begin-trial-button",C.OFFER_FULLSCREEN && !document.fullscreenElement ?
+      "Enter fullscreen and "+(session.startCountdownComplete ? "continue" : "start") :
+      session.startCountdownComplete ? "Continue demonstration" : "Start countdown");
     $("begin-trial-button").disabled=false;
   }
-  async function begin() {
+  function fullscreenFallback(copy) {
+    $("pause-overlay").hidden=true;
+    $("fullscreen-overlay").hidden=false;
+    $("main-content").inert=true;
+    setText("fullscreen-title",copy ? "Enlarge the experiment window" : "Full screen is unavailable");
+    setText("fullscreen-message",copy || "Full screen could not be started. You can try again, or continue in this browser window after enlarging it. The task will use all of the available page area.");
+    $("retry-fullscreen-button").focus();
+  }
+  async function begin(options) {
     if(beginInFlight || attempt || countdownRun || !["ready","paused","paused_feedback","paused_countdown"].includes(phaseState)) return;
+    const allowWindowed=Boolean(options && options.allowWindowed===true);
     beginInFlight=true;
     const starting={cancelled:false,sessionId:session.id};
     pendingBegin=starting;
+    $("fullscreen-overlay").hidden=true;
     try {
-      if(uploadPromise) await uploadPromise;
-      if(starting.cancelled || !session || session.id!==starting.sessionId) return;
-      if(C.OFFER_FULLSCREEN && !document.fullscreenElement && document.documentElement.requestFullscreen) {
-        try {await document.documentElement.requestFullscreen();} catch (_) {/* Fullscreen is optional. */}
+      // Request full screen directly from this click, before an upload wait can
+      // consume the browser's transient user activation.
+      if(C.OFFER_FULLSCREEN && !document.fullscreenElement && !allowWindowed) {
+        if(!document.documentElement.requestFullscreen) {fullscreenFallback();return;}
+        try {await document.documentElement.requestFullscreen({navigationUI:"hide"});}
+        catch (_) {
+          if(!starting.cancelled && session && session.id===starting.sessionId) fullscreenFallback();
+          return;
+        }
       }
+      if(uploadPromise) await uploadPromise;
       // Fullscreen requests can resolve after a tab switch or lost focus. An
       // interrupted start always requires another explicit resume action.
       if(starting.cancelled || !session || session.id!==starting.sessionId) return;
       if(document.hidden) {interrupt("tab_hidden");return;}
-      if(!deviceOK()) {setText("ready-copy","Please enlarge your browser window before starting. A minimum of "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels is needed to keep all letters visible.");return;}
+      if(!deviceOK()) {
+        fullscreenFallback("Please enlarge this window to at least "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels, then continue. You can also try full screen.");
+        return;
+      }
       if(phaseState==="paused_feedback") showAdjustmentFeedback();
       else if(!session.startCountdownComplete) startCountdown();
       else startTrial();
@@ -1555,9 +1713,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function drawCountdown(number) {
     if(!countdownRun) return;
     const c=countdownRun.canvas,ctx=c.ctx,g=c.geometry;
-    ctx.fillStyle="#000000";ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle=C.TASK_BACKGROUND;ctx.fillRect(0,0,c.width,c.height);
     ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.font="600 48px Arial, Helvetica, sans-serif";
+    ctx.font="600 "+Math.max(64,Math.round(g.digit_font_px*1.5))+"px Arial, Helvetica, sans-serif";
     ctx.fillStyle="#ffffff";ctx.fillText(String(number),g.center_x,g.center_y);
     c.canvas.setAttribute("aria-label","Get ready: "+number);
     countdownRun.lastNumber=number;
@@ -1589,7 +1747,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function draw(center, peripheral) {
     if(!attempt) return;
     const a=attempt, ctx=a.canvas.ctx,g=a.canvas.geometry;
-    ctx.fillStyle="#000000";ctx.fillRect(0,0,a.canvas.width,a.canvas.height);
+    ctx.fillStyle=C.TASK_BACKGROUND;ctx.fillRect(0,0,a.canvas.width,a.canvas.height);
     ctx.textAlign="center";ctx.textBaseline="middle";
     ctx.font="500 "+g.digit_font_px+"px Arial, Helvetica, sans-serif";
     ctx.fillStyle="#ffffff";ctx.fillText(center,g.center_x,g.center_y);
@@ -1719,7 +1877,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
       const recent=session.trials.filter(r=>r.planned_trial>session.cursor-C.ADJUST_EVERY&&r.planned_trial<=session.cursor&&["complete","timeout"].includes(r.trial_status));
       const summary=Core.summarize(recent);
       const before=row.distance;
-      session.currentDistance=Core.adjustDistance(before,summary.correct,summary.presented_n,C);
+      const proposed=Core.adjustDistance(before,summary.correct,summary.presented_n,C);
+      const next=currentPlan();
+      session.currentDistance=Core.geometry(row.canvas_width,row.canvas_height,proposed,next.quadrant,next.target_position).used_distance;
       session.adjustmentFeedback={set:session.cursor/C.ADJUST_EVERY,total:summary.presented_n,correct:summary.correct,
         digit_hits:summary.digit_hits,zero_targets:summary.zero_targets,digit_hit_rate:summary.digit_hit_rate,
         digit_false_alarms:summary.digit_false_alarms,distance_before:before,distance_after:session.currentDistance};
@@ -1842,7 +2002,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     const keys=["TASK_VERSION","MAIN_BLOCKS","START_COUNTDOWN_SECONDS","FIXATION_MS","STREAM_MS","DIGIT_COUNT",
       "PERIPHERAL_ONSET_DIGIT","PERIPHERAL_DIGITS","RESPONSE_WINDOW_MS","GRACE_MS","REPORT_TIMEOUT_MS",
       "MAIN_TRIALS","DISTANCE_START","DISTANCE_MIN","DISTANCE_MAX","DISTANCE_STEP","ADJUST_EVERY","ADJUST_PAUSE_MS",
-      "FRAME_WARNING_MS","FRAME_ABORT_MS","COLORS"];
+      "FRAME_WARNING_MS","FRAME_ABORT_MS","TASK_BACKGROUND","COLORS"];
     return saved && sameCollector() && keys.every(key=>JSON.stringify(saved[key])===JSON.stringify(C[key]));
   }
   function sameCollector() {
@@ -1859,7 +2019,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     recoverPending("page_reload");
     if(session.stage==="results" || session.phase==="main"&&session.cursor>=plans().length) {results();return;}
     if(session.stage==="adjustment_feedback") {phaseState="paused_feedback";begin();return;}
-    if(!session.startCountdownComplete) {ready("Press Start countdown when you are ready. The full 3–2–1 countdown will restart before the first trial.");return;}
+    if(!session.startCountdownComplete) {ready("Start when you are ready. The full 3–2–1 countdown will restart before the first trial.");return;}
     ready("Your completed trials have been restored. Any unfinished trial will be repeated.");
   }
   function download(name,text,type) {
@@ -1888,6 +2048,11 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     renderSaveStatus();
   }
   document.addEventListener("keydown",event=>{
+    if(!$("fullscreen-overlay").hidden && event.key==="Tab") {
+      event.preventDefault();
+      const next=document.activeElement===$("retry-fullscreen-button") ? $("continue-windowed-button") : $("retry-fullscreen-button");
+      next.focus();return;
+    }
     if(["paused","paused_feedback","paused_countdown"].includes(phaseState) && event.key==="Tab") {
       event.preventDefault();$("resume-trial-button").focus();return;
     }
@@ -1916,6 +2081,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   $("start-button").addEventListener("click",newSession);
   $("instruction-start-button").addEventListener("click",()=>ready());
   $("begin-trial-button").addEventListener("click",begin);
+  $("retry-fullscreen-button").addEventListener("click",begin);
+  $("continue-windowed-button").addEventListener("click",()=>begin({allowWindowed:true}));
   $("resume-trial-button").addEventListener("click",()=>{if(deviceOK())begin();else setText("pause-reason","Please enlarge the window to at least "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels before continuing.");});
   $("resume-button").addEventListener("click",resumeStored);
   $("discard-session-button").addEventListener("click",returnToWelcome);

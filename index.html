@@ -10,19 +10,20 @@
        GOOGLE_SCRIPT_URL below. This is the only file to upload to GitHub Pages.
        If your collector predates version 1.2.0, replace Code.gs, run setup, and
        update the existing Apps Script web-app deployment for the student fields.
-       Version 1.3.0 uses that same collector; this timing update only needs HTML. -->
+       Version 1.3.1 uses that same collector; this timing update only needs HTML. -->
   <script id="task-settings">
 /* Edit the two settings below before collecting class data. No account token is needed. */
 window.IC_CONFIG = Object.freeze({
   GOOGLE_SCRIPT_URL: "", // Paste the deployed Apps Script web-app URL ending in /exec.
   CLASS_CODE: "",        // Optional class/section label; participants can also enter it.
-  TASK_VERSION: "1.3.0",
+  TASK_VERSION: "1.3.1",
   MAIN_BLOCKS: 1,
   MAIN_TRIALS: 60,       // Exactly 60 scheduled trials; no additional practice trials.
   OFFER_FULLSCREEN: true,
   STORAGE_PREFIX: "illusory-conjunction-v1",
   MIN_WIDTH: 900,
   MIN_HEIGHT: 650,
+  START_COUNTDOWN_SECONDS: 3, // One opening 3–2–1 countdown before the first trial.
   FIXATION_MS: 1000,     // Visible central fixation cross before every digit stream.
   STREAM_MS: 2000,
   DIGIT_COUNT: 12,
@@ -188,6 +189,8 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .task-screen { padding: 0; }
 .task-heading { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 13px; }
 .task-heading h1 { font-size: 16px; line-height: 1.4; letter-spacing: -.2px; font-weight: 600; }
+.task-screen[data-preparing="true"] .task-heading h1 { font-size: 22px; }
+.task-screen[data-preparing="true"] .task-key-reminder { visibility: hidden; }
 .task-key-reminder { color: var(--muted); font-size: 11px; white-space: nowrap; }
 .task-key-reminder kbd { margin-right: 5px; }
 .stimulus-stage { width: 100%; height: var(--stage-height); overflow: hidden; background: #050608; border-radius: 7px; }
@@ -467,7 +470,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <div><span class="key-guide-label">Green letters</span><span><kbd>4</kbd> T <kbd>5</kbd> X <kbd>6</kbd> L</span></div>
         <div><span class="key-guide-label">Blue letters</span><span><kbd>7</kbd> T <kbd>8</kbd> X <kbd>9</kbd> L</span></div>
       </div>
-      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">60 trials in sets of 10. Each trial begins with a one-second fixation cross. Answer at your own pace. Distance adjusts between sets, with a one-second feedback pause. There are no extra practice trials.</p><button id="instruction-start-button" type="button" class="button button-primary">I’m ready <span aria-hidden="true">→</span></button></div>
+      <div class="instruction-bottom"><p id="trial-count-copy" class="muted">60 trials in sets of 10. A 3–2–1 countdown appears before the first trial; every trial then starts with a one-second fixation cross. Answer at your own pace. Distance adjusts between sets, with a one-second feedback pause.</p><button id="instruction-start-button" type="button" class="button button-primary">I’m ready <span aria-hidden="true">→</span></button></div>
     </section>
 
     <section id="ready-screen" class="screen centered-screen" aria-labelledby="ready-title" tabindex="-1" hidden>
@@ -475,9 +478,9 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
         <p class="eyebrow">Ready when you are</p>
         <div class="focus-symbol" aria-hidden="true">+</div>
         <h1 id="ready-title">Ready for 60 trials?</h1>
-        <p id="ready-copy" class="focus-copy">Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.</p>
-        <button id="begin-trial-button" type="button" class="button button-primary">Start demonstration <span aria-hidden="true">→</span></button>
-        <p class="field-hint">Place your thumb on Space. After each answer, the fixation cross returns before the next trial.</p>
+        <p id="ready-copy" class="focus-copy">A 3–2–1 countdown will give you time to look at the center before the first trial. Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.</p>
+        <button id="begin-trial-button" type="button" class="button button-primary">Start countdown <span aria-hidden="true">→</span></button>
+        <p class="field-hint">Place your thumb on Space, then start the countdown. After each answer, the fixation cross returns before the next trial.</p>
       </div>
     </section>
 
@@ -1292,6 +1295,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   const countSchedule = configuredSchedule(0);
   let session = null;
   let attempt = null;
+  let countdownRun = null;
   let phaseState = "welcome";
   let frameHandle = 0;
   let runToken = 0;
@@ -1301,6 +1305,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   let storageFailed = false;
   let uploadPromise = null;
   let beginInFlight = false;
+  let pendingBegin = null;
   let collectorReachable = null;
   let uiReady = false;
   let syncStatus = {state:"local", pending:0, message:""};
@@ -1374,9 +1379,10 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     }
     const total=plans().length;
     const feedback=session.stage==="adjustment_feedback";
-    setText("phase-label",feedback ? "SET "+Math.ceil(session.cursor/C.ADJUST_EVERY)+" COMPLETE" : "ADAPTIVE DEMONSTRATION");
+    const countdown=session.stage==="start_countdown";
+    setText("phase-label",countdown ? "GET READY" : feedback ? "SET "+Math.ceil(session.cursor/C.ADJUST_EVERY)+" COMPLETE" : "ADAPTIVE DEMONSTRATION");
     setText("trial-progress",session.stage === "results" ? "Complete · "+total+" trials" :
-      feedback ? session.cursor+" / "+total+" complete" : "Trial "+Math.min(session.cursor+1,total)+" / "+total);
+      countdown ? total+" total trials" : feedback ? session.cursor+" / "+total+" complete" : "Trial "+Math.min(session.cursor+1,total)+" / "+total);
     $("progress-fill").style.width=(100*session.cursor/Math.max(1,total))+"%";
   }
   function renderSaveStatus() {
@@ -1472,7 +1478,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     session={id,seed,first_name:firstName,last_name:lastName,student_id:studentId,section_id:sectionId,
       participant_id:studentId,class_code:sectionId,
       task_version:C.TASK_VERSION,started_at_utc:new Date().toISOString(),phase:"main",cursor:0,
-      currentDistance:C.DISTANCE_START,adjustmentFeedback:null,
+      currentDistance:C.DISTANCE_START,adjustmentFeedback:null,startCountdownComplete:false,
       stage:"instructions",schedule,trials:[],blocks:[],attempts:{},queued_trial_ids:[],queued_block_ids:[],pendingAttempt:null,
       config_snapshot:JSON.parse(JSON.stringify(C))};
     persist();
@@ -1489,21 +1495,34 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   function ready(copy) {
     phaseState="ready";session.stage="ready";persist();show("ready-screen");
     setText("ready-title","Ready for "+(plans().length-session.cursor)+" trials?");
-    setText("ready-copy",copy || "Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.");
+    const opening=session.startCountdownComplete ? "" : "A 3–2–1 countdown will give you time to look at the center before the first trial. ";
+    setText("ready-copy",copy || opening+"Look at the central + before each trial. The digits start automatically after one second. Press Space for each 0, and remember the T, X, or L off to the side and its color. Then choose that same letter in that same color at your own pace.");
+    setText("begin-trial-button",session.startCountdownComplete ? "Continue demonstration" : "Start countdown");
     $("begin-trial-button").disabled=false;
   }
   async function begin() {
-    if(beginInFlight || attempt || !["ready","paused","paused_feedback"].includes(phaseState)) return;
+    if(beginInFlight || attempt || countdownRun || !["ready","paused","paused_feedback","paused_countdown"].includes(phaseState)) return;
     beginInFlight=true;
+    const starting={cancelled:false,sessionId:session.id};
+    pendingBegin=starting;
     try {
       if(uploadPromise) await uploadPromise;
+      if(starting.cancelled || !session || session.id!==starting.sessionId) return;
       if(C.OFFER_FULLSCREEN && !document.fullscreenElement && document.documentElement.requestFullscreen) {
         try {await document.documentElement.requestFullscreen();} catch (_) {/* Fullscreen is optional. */}
       }
+      // Fullscreen requests can resolve after a tab switch or lost focus. An
+      // interrupted start always requires another explicit resume action.
+      if(starting.cancelled || !session || session.id!==starting.sessionId) return;
+      if(document.hidden) {interrupt("tab_hidden");return;}
       if(!deviceOK()) {setText("ready-copy","Please enlarge your browser window before starting. A minimum of "+C.MIN_WIDTH+" × "+C.MIN_HEIGHT+" pixels is needed to keep all letters visible.");return;}
       if(phaseState==="paused_feedback") showAdjustmentFeedback();
+      else if(!session.startCountdownComplete) startCountdown();
       else startTrial();
-    } finally {beginInFlight=false;}
+    } finally {
+      if(pendingBegin===starting) pendingBegin=null;
+      beginInFlight=false;$("resume-trial-button").disabled=false;
+    }
   }
   function blankRow(headers) {return Object.fromEntries(headers.map(k=>[k,null]));}
   function baseRow(headers) {
@@ -1520,6 +1539,52 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     ctx.setTransform(dpr,0,0,dpr,0,0);
     const geometry=Core.geometry(width,height,plan.distance,plan.quadrant,plan.target_position);
     return {canvas,ctx,width,height,dpr,geometry};
+  }
+  function startCountdown() {
+    if(countdownRun || attempt || !session || session.startCountdownComplete || !currentPlan()) return;
+    phaseState="countdown";session.stage="start_countdown";persist();
+    show("task-screen");$("task-screen").dataset.preparing="true";
+    setText("task-caption","Get ready");
+    setText("task-note","Look at the countdown in the center. The fixation cross will appear next.");
+    const canvas=prepareCanvas({...currentPlan(),distance:session.currentDistance});
+    countdownRun={canvas,startedAt:null,lastNumber:null,token:++runToken};
+    drawCountdown(C.START_COUNTDOWN_SECONDS);
+    const token=countdownRun.token;
+    frameHandle=requestAnimationFrame(t=>countdownTick(t,token));
+  }
+  function drawCountdown(number) {
+    if(!countdownRun) return;
+    const c=countdownRun.canvas,ctx=c.ctx,g=c.geometry;
+    ctx.fillStyle="#000000";ctx.fillRect(0,0,c.width,c.height);
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.font="600 48px Arial, Helvetica, sans-serif";
+    ctx.fillStyle="#ffffff";ctx.fillText(String(number),g.center_x,g.center_y);
+    c.canvas.setAttribute("aria-label","Get ready: "+number);
+    countdownRun.lastNumber=number;
+  }
+  function countdownTick(now,token) {
+    if(!countdownRun || countdownRun.token!==token || token!==runToken || phaseState!=="countdown") return;
+    if(document.hidden) {interrupt("tab_hidden");return;}
+    if(!deviceOK()) {interrupt("window_resize");return;}
+    if(countdownRun.startedAt===null) countdownRun.startedAt=now;
+    const elapsed=now-countdownRun.startedAt;
+    const duration=C.START_COUNTDOWN_SECONDS*1000;
+    if(elapsed>=duration) {
+      countdownRun=null;session.startCountdownComplete=true;session.stage="ready";
+      phaseState="ready";persist();startTrial();return;
+    }
+    const number=Math.ceil((duration-elapsed)/1000);
+    if(number!==countdownRun.lastNumber) drawCountdown(number);
+    frameHandle=requestAnimationFrame(t=>countdownTick(t,token));
+  }
+  function pauseCountdown() {
+    cancelAnimationFrame(frameHandle);runToken++;countdownRun=null;
+    phaseState="paused_countdown";session.stage="start_countdown";persist();
+    $("pause-overlay").hidden=false;
+    setText("pause-reason","The opening countdown paused. Continue when you are ready to restart 3–2–1.");
+    setText("resume-trial-button","Restart countdown");
+    $("resume-trial-button").disabled=beginInFlight;
+    $("main-content").inert=true;$("resume-trial-button").focus();
   }
   function draw(center, peripheral) {
     if(!attempt) return;
@@ -1540,9 +1605,12 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   function startTrial() {
     if(attempt || !session || !currentPlan()) return;
+    if(!session.startCountdownComplete) {startCountdown();return;}
     if(!deviceOK()) {ready("Enlarge the window before continuing.");return;}
     const plan={...currentPlan(),distance:session.currentDistance};
     phaseState="fixation";session.stage="trial";show("task-screen");
+    $("task-screen").dataset.preparing="false";
+    $("stimulus-canvas").setAttribute("aria-label","Visual task display: watch the digits at the center and press Space for zero.");
     setText("task-caption","Watch the center · "+(session.cursor+1)+" / "+plans().length);
     setText("task-note","Look at the central +. The digits will start automatically.");
     const key=plan.phase+"-"+plan.planned_trial;
@@ -1728,9 +1796,25 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     session.stage="results";persist();flushAtBreak($("restart-button"));
   }
   function interrupt(reason,message) {
+    if(pendingBegin && !attempt && !countdownRun && phaseState!=="feedback") {
+      // Resizing during the fullscreen transition is expected; the canvas has
+      // not appeared yet and will be prepared at the new size.
+      if(reason==="window_resize") return;
+      pendingBegin.cancelled=true;
+      if(!session.startCountdownComplete) {pauseCountdown();return;}
+      phaseState=session.stage==="adjustment_feedback" ? "paused_feedback" : "paused";
+      if(phaseState==="paused") session.stage="paused";
+      persist();$("pause-overlay").hidden=false;
+      setText("pause-reason","The demonstration paused before continuing. Resume when you are ready.");
+      setText("resume-trial-button","Continue demonstration");
+      $("resume-trial-button").disabled=true;
+      $("main-content").inert=true;$("resume-trial-button").focus();return;
+    }
+    if(countdownRun || phaseState==="countdown") {pauseCountdown();return;}
     if(!attempt && phaseState==="feedback") {
       cancelAnimationFrame(frameHandle);runToken++;phaseState="paused_feedback";persist();
       $("pause-overlay").hidden=false;setText("pause-reason","The demonstration paused between sets. Continue when you are ready.");
+      setText("resume-trial-button","Continue demonstration");
       $("main-content").inert=true;$("resume-trial-button").focus();return;
     }
     if(!attempt || !["fixation","stream","grace","report"].includes(phaseState)) return;
@@ -1741,6 +1825,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     session.trials.push(attempt.row);session.pendingAttempt=null;attempt=null;
     phaseState="paused";session.stage="paused";persist();renderSaveStatus();
     $("pause-overlay").hidden=false;setText("pause-reason",message||"This trial was interrupted. Your completed responses are safe. The same condition will be repeated.");
+    setText("resume-trial-button","Continue demonstration");
     $("main-content").inert=true;
     $("resume-trial-button").focus();
   }
@@ -1754,7 +1839,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   function compatibleSession() {
     const saved=session.config_snapshot;
-    const keys=["TASK_VERSION","MAIN_BLOCKS","FIXATION_MS","STREAM_MS","DIGIT_COUNT",
+    const keys=["TASK_VERSION","MAIN_BLOCKS","START_COUNTDOWN_SECONDS","FIXATION_MS","STREAM_MS","DIGIT_COUNT",
       "PERIPHERAL_ONSET_DIGIT","PERIPHERAL_DIGITS","RESPONSE_WINDOW_MS","GRACE_MS","REPORT_TIMEOUT_MS",
       "MAIN_TRIALS","DISTANCE_START","DISTANCE_MIN","DISTANCE_MAX","DISTANCE_STEP","ADJUST_EVERY","ADJUST_PAUSE_MS",
       "FRAME_WARNING_MS","FRAME_ABORT_MS","COLORS"];
@@ -1774,6 +1859,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     recoverPending("page_reload");
     if(session.stage==="results" || session.phase==="main"&&session.cursor>=plans().length) {results();return;}
     if(session.stage==="adjustment_feedback") {phaseState="paused_feedback";begin();return;}
+    if(!session.startCountdownComplete) {ready("Press Start countdown when you are ready. The full 3–2–1 countdown will restart before the first trial.");return;}
     ready("Your completed trials have been restored. Any unfinished trial will be repeated.");
   }
   function download(name,text,type) {
@@ -1793,6 +1879,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   }
   function returnToWelcome() {
     cancelAnimationFrame(frameHandle);runToken++;
+    countdownRun=null;if(pendingBegin) pendingBegin.cancelled=true;
     archiveCurrent();session=null;attempt=null;phaseState="welcome";
     try {localStorage.removeItem(activeKey);} catch (_) {}
     ["first-name","last-name","student-id"].forEach(id=>$(id).value="");$("resume-panel").hidden=true;
@@ -1801,11 +1888,11 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
     renderSaveStatus();
   }
   document.addEventListener("keydown",event=>{
-    if(["paused","paused_feedback"].includes(phaseState) && event.key==="Tab") {
+    if(["paused","paused_feedback","paused_countdown"].includes(phaseState) && event.key==="Tab") {
       event.preventDefault();$("resume-trial-button").focus();return;
     }
     if(event.code==="Space") {
-      if(["fixation","stream","grace","report"].includes(phaseState)) event.preventDefault();
+      if(["countdown","fixation","stream","grace","report"].includes(phaseState)) event.preventDefault();
       if(event.repeat||spaceHeld) return;spaceHeld=true;
       if(attempt&&["stream","grace"].includes(phaseState)&&!event.ctrlKey&&!event.altKey&&!event.metaKey) {
         attempt.presses.push(round(performance.now()-attempt.streamStart));
@@ -1823,7 +1910,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   window.addEventListener("resize",()=>{updateDeviceWarning();interrupt("window_resize","The window size changed. This trial will be repeated at the new size.");});
   document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement)interrupt("fullscreen_exit","Full screen ended during a trial. This trial will be repeated.");});
   window.addEventListener("beforeunload",()=>{
-    if(attempt) interrupt("page_unload","The page was closed during an unfinished trial.");
+    if(attempt || countdownRun || pendingBegin) interrupt("page_unload","The page was closed during an unfinished trial.");
     persist();
   });
   $("start-button").addEventListener("click",newSession);
@@ -1859,7 +1946,7 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
   setText("practice-count",countSchedule.main.length+" total trials");
   setText("main-block-count","Every "+C.ADJUST_EVERY+" trials");
   setText("session-duration","Self-paced answers");
-  setText("trial-count-copy",mainTaskDescription(countSchedule)+". Each trial begins with a one-second fixation cross. Answer at your own pace. There are no extra practice trials. A one-second feedback pause separates each set.");
+  setText("trial-count-copy",mainTaskDescription(countSchedule)+". A 3–2–1 countdown appears before the first trial; every trial then starts with a one-second fixation cross. Answer at your own pace. A one-second feedback pause separates each set.");
   setText("trial-progress",countSchedule.main.length+" total trials");
   updateDeviceWarning();renderSaveStatus();
 })();
